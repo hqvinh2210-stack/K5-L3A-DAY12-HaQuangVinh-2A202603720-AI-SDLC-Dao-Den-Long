@@ -1,0 +1,27 @@
+
+> dao-den-long@1.0.0 test
+> node --test
+
+✔ fixed ticks, starting state, partial frames and yaw mapping (1309.0061ms)
+✔ diagonal movement is normalized and holding jump cannot repeat it (523.8352ms)
+✔ pickup radius includes boundary, capacity is enforced, and score follows pickups (384.8273ms)
+✔ interact allows partial deposit and uses a rising edge before lighting (434.6095ms)
+✔ interact ignores a lamp just beyond its radius (356.342ms)
+✔ pulse uses radius, pushes, applies stun for its full duration, and costs light (410.1841ms)
+✔ pulse cooldown rejects early press and holding does not retrigger (874.4881ms)
+✔ shade contact consumes a flame, drops floor of the ratio and respects invulnerability (376.0531ms)
+✔ lit safe radius excludes chasing shades and prevents contact damage at the boundary (415.7863ms)
+✔ last lantern wins, bonuses are added once, and execution stops immediately (375.9724ms)
+✔ lose reasons distinguish no flames from dawn (601.1343ms)
+✔ scenario setup replaces lists, preserves untouched lamps and emits no events or score (352.7897ms)
+✔ random game logs are byte-identical across independent CLI runs (1421.2898ms)
+✔ CLI uses exit 2 for malformed files and non-zero for command and filesystem errors (3461.0874ms)
+✔ the default island can be won without scenario overrides (581.2122ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12815.8943

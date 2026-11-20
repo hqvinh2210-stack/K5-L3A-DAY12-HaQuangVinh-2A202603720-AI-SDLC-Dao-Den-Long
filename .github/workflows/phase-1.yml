@@ -1,0 +1,27 @@
+name: Phase 1 contract
+
+on:
+  push:
+    branches: [main]
+    tags: [phase-1]
+
+jobs:
+  contract:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+      - name: Check the web launcher
+        shell: bash
+        run: |
+          npm start > /tmp/lantern-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          curl --retry 5 --retry-connrefused --fail --silent http://127.0.0.1:4173/ | grep -q '<title>Đảo Đèn Lồng</title>'

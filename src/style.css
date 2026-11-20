@@ -1,0 +1,125 @@
+:root {
+  color-scheme: dark;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #101723;
+  color: #fff2d5;
+  --gold: #f8ca79;
+  --soft: #c8cec5;
+  --line: #e6cb8d33;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; width: 100%; min-height: 100%; }
+body {
+  min-height: 100svh;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 69% 40%, #416158 0%, #283c48 33%, #181f31 62%, #100f1c 100%);
+}
+canvas#world, canvas#effects, .veil { position: fixed; inset: 0; width: 100%; height: 100%; }
+.veil {
+  pointer-events: none;
+  background: linear-gradient(90deg, #10131ef7, #10131ebc 24%, #10131e20 57%, transparent 74%),
+    linear-gradient(0deg, #0b101be8, transparent 28%), linear-gradient(180deg, #0b101b9e, transparent 26%);
+  transition: opacity .35s;
+}
+body.playing .veil { opacity: .44; }
+.top {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  padding: 24px clamp(16px, 4vw, 62px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+.identity { display: flex; align-items: center; gap: 13px; min-width: max-content; }
+.identity strong { display: block; font-family: system-ui, sans-serif; font-size: 17px; line-height: 1.1; }
+.identity div > span { display: block; font-size: 13px; color: var(--soft); padding-top: 4px; }
+.mark { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; }
+.mark i { display: block; width: 14px; height: 18px; border: 1px solid var(--gold); border-radius: 5px; position: relative; background: #f8ca7933; }
+.mark i::before, .mark i::after { content: ""; width: 7px; height: 1px; background: var(--gold); position: absolute; left: 2.5px; }
+.mark i::before { top: -4px; }
+.mark i::after { bottom: -4px; }
+.intro {
+  position: fixed;
+  top: 48%;
+  transform: translateY(-44%);
+  left: clamp(22px, 7.5vw, 132px);
+  width: min(536px, 88vw);
+}
+.eyebrow { color: var(--gold); letter-spacing: .19em; font-size: 13px; font-weight: 750; display: flex; align-items: center; gap: 12px; }
+.eyebrow span { width: 29px; height: 1px; background: #e6b77285; }
+h1, h2 { font-family: system-ui, sans-serif; font-weight: 650; letter-spacing: -.073em; margin: .15em 0 .18em; }
+h1 { font-size: clamp(56px, 9.25vw, 147px); line-height: .97; }
+h1 em { color: var(--gold); font-style: italic; }
+.story, .end-card > p { color: #d8d8cc; font-size: clamp(16px, 1.45vw, 20px); line-height: 1.62; max-width: 375px; }
+.story { margin: 0 0 23px; }
+.action {
+  appearance: none;
+  border: 1px solid #fbd59a;
+  border-radius: 3px;
+  padding: 13px 24px;
+  background: #f3c577;
+  color: #2c1d19;
+  line-height: 1.3;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.action:hover, .action:focus-visible { background: #ffe0a5; outline: 2px solid #ffe0a5; outline-offset: 4px; }
+.action:disabled { opacity: .5; cursor: wait; }
+.error { color: #ffca93; }
+.stats { display: flex; border: 1px solid var(--line); background: #0d1621d9; border-radius: 6px; }
+.stat { min-width: 83px; padding: 8px 14px; border-inline-end: 1px solid var(--line); }
+.stat:last-child { border: none; }
+.stat span { display: block; font-size: 13px; color: var(--soft); margin-bottom: 4px; }
+.stat strong { display: block; font-variant-numeric: tabular-nums; color: var(--gold); font-size: 18px; line-height: 1.1; }
+.flames i { display: inline-block; width: 9px; height: 12px; margin: 2px 6px 0 0; border-radius: 70% 30% 64% 45%; transform: rotate(-32deg); background: #ffbf72; box-shadow: 0 0 8px #ff94577a; }
+.flames i.empty { background: #534b57; box-shadow: none; }
+.navigation { position: fixed; bottom: 65px; right: clamp(16px, 4vw, 62px); width: 163px; background: #0d1621e6; border: 1px solid var(--line); border-radius: 5px; padding: 10px; }
+.map-title, .map-key { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.map-title span:first-child { font-weight: 650; font-size: 15px; }
+.map-title span:last-child { color: var(--gold); font-size: 11px; letter-spacing: .09em; }
+#map { width: 100%; display: block; }
+.map-key { color: var(--soft); font-size: 11px; }
+.map-key i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; background: #f9f0cd; }
+.map-key span + span i { background: var(--gold); }
+.hint {
+  position: fixed; left: 50%; bottom: 76px; transform: translateX(-50%);
+  max-width: min(68vw, 510px); width: max-content; color: #fff1cd; text-align: center;
+  border: 1px solid var(--line); background: #0d1621ed; border-radius: 5px; padding: 10px 15px;
+  font-size: 15px;
+}
+.controls {
+  position: fixed; left: 0; bottom: 0; width: 100%; display: flex; justify-content: center;
+  flex-wrap: wrap; gap: 8px clamp(12px, 2.6vw, 32px); padding: 12px 16px 15px;
+  border-top: 1px solid var(--line); color: #e4decb; background: #0d131ee0; font-size: 13px;
+}
+.controls span { white-space: nowrap; }
+kbd { display: inline-block; line-height: 1.35; font-family: inherit; font-size: 12px; font-weight: 700; color: var(--gold); border: 1px solid var(--line); border-radius: 3px; padding: 2px 5px; margin-right: 4px; }
+.end { position: fixed; z-index: 5; inset: 0; display: grid; place-items: center; padding: 20px; background: #0b101ac9; }
+.end-card { background: #141d27; border: 1px solid var(--line); border-radius: 6px; padding: clamp(22px, 6vw, 60px); width: min(580px, 100%); }
+.end-card .eyebrow { color: var(--gold); font-size: 13px; }
+h2 { color: var(--gold); font-size: clamp(42px, 6vw, 64px); line-height: 1.05; }
+.end-card .final-score { color: var(--gold); font-weight: 750; }
+
+@media (max-width: 720px) {
+  .top { flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 14px; }
+  .stats { width: 100%; justify-content: space-between; }
+  .stat { min-width: 0; padding: 6px 7px; }
+  .stat span { font-size: 11px; }
+  .stat strong { font-size: 16px; }
+  .navigation { width: 119px; bottom: 91px; }
+  .map-key { display: none; }
+  .hint { left: 15px; bottom: 92px; transform: none; max-width: calc(100vw - 154px); }
+  .controls { justify-content: flex-start; }
+}
+@media (max-height: 540px) {
+  .intro { top: 49%; }
+  h1 { font-size: clamp(44px, 10vh, 62px); }
+  .story { margin-bottom: 12px; }
+  .eyebrow { margin: 6px 0; }
+  .navigation { width: 115px; }
+}
