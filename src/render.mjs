@@ -27,6 +27,8 @@ const vertex = `
 attribute vec3 aPosition;
 attribute vec3 aColor;
 attribute float aGlow;
+attribute vec4 aInstance;
+uniform bool uInstanced;
 uniform vec3 uEye;
 uniform vec3 uRight;
 uniform vec3 uUp;
@@ -37,11 +39,16 @@ varying vec3 vColor;
 varying float vGlow;
 varying float vDepth;
 void main() {
-  vec3 relative = aPosition - uEye;
+  vec3 world = aPosition;
+  if (uInstanced) {
+    float c = cos(aInstance.w), s = sin(aInstance.w);
+    world = aInstance.xyz + vec3(c*aPosition.x+s*aPosition.z,aPosition.y,c*aPosition.z-s*aPosition.x);
+  }
+  vec3 relative = world - uEye;
   float depth = dot(relative, uForward);
   gl_Position = vec4(dot(relative, uRight) * uScale.x,
     dot(relative, uUp) * uScale.y, 1.002 * depth - 0.603, depth);
-  vPosition = aPosition;
+  vPosition = world;
   vColor = aColor;
   vGlow = aGlow;
   vDepth = depth;
@@ -60,8 +67,10 @@ varying float vDepth;
 void main() {
   float local = 0.0;
   for (int i = 0; i < 7; i++) {
-    vec2 delta = vPosition.xz - uLamps[i].xz;
-    local += (1.0 - smoothstep(0.0, 14.0, length(delta))) * uLamps[i].y;
+    if (uLamps[i].y > 0.0) {
+      vec2 delta = vPosition.xz - uLamps[i].xz;
+      local += (1.0 - smoothstep(0.0, 14.0, length(delta))) * uLamps[i].y;
+    }
   }
   float small = 1.0 - smoothstep(0.0, 5.0, distance(vPosition, uMay));
   vec3 ambient = vec3(0.58, 0.66, 0.75) + uWarmth * vec3(0.68, 0.62, 0.50);
@@ -113,12 +122,12 @@ function column(mesh, x, z, base, height, bottom, top, sides, color, angle = 0, 
   }
 }
 
-function orb(mesh, x, y, z, rx, ry, rz, color, glow = 0, sides = 8) {
+function orb(mesh, x, y, z, rx, ry, rz, color, glow = 0, sides = 8, bands = 4) {
   const point = (lat, lon) => [x + rx * Math.cos(lat) * Math.sin(lon),
     y + ry * Math.sin(lat), z + rz * Math.cos(lat) * Math.cos(lon)];
-  for (let ring = 0; ring < 4; ring++) {
-    const bottom = (ring / 4 - 0.5) * Math.PI;
-    const top = ((ring + 1) / 4 - 0.5) * Math.PI;
+  for (let ring = 0; ring < bands; ring++) {
+    const bottom = (ring / bands - 0.5) * Math.PI;
+    const top = ((ring + 1) / bands - 0.5) * Math.PI;
     for (let i = 0; i < sides; i++) {
       const a = i / sides * TAU;
       const b = (i + 1) / sides * TAU;
@@ -299,7 +308,7 @@ function drawMay(mesh, game, yaw, time) {
   return [lx, y + 1.08, lz];
 }
 
-function drawShade(mesh, shade, time, index, cam, colorblind) {
+function drawShade(mesh, shade, time, index, cam, colorblind, low=false) {
   const [x, y, z] = shade.pos;
   const wobble = Math.sin(time * 3.1 + index);
   const stunned = shade.state === 'stunned';
@@ -317,24 +326,25 @@ function drawShade(mesh, shade, time, index, cam, colorblind) {
     quad(mesh,sidePoint(a,.006),sidePoint(b,.006),sidePoint(b,.042),sidePoint(a,.042),outline,1);
   }
   orb(mesh, x, middle + 0.22, z, 0.62 + 0.06 * wobble, stunned ? 0.47 : 0.88, 0.59,
-    stunned ? colors.stunned : colors.ink,0.9);
-  for (let i = 0; i < 5; i++) {
+    stunned ? colors.stunned : colors.ink,0.9,low ? 6 : 8,low ? 3 : 4);
+  for (let i = 0; i < (low ? 3 : 5); i++) {
     const [tx, , tz] = polar(x, z, 0.48, i * TAU / 5 + time * 0.7, 0);
-    orb(mesh, tx, middle - 0.4 + Math.sin(i + time * 4) * 0.165, tz, 0.22, 0.42, 0.22, colors.ink, 0.9, 5);
+    orb(mesh, tx, middle - 0.4 + Math.sin(i + time * 4) * 0.165, tz, 0.22, 0.42, 0.22, colors.ink, 0.9, 5,low ? 2 : 4);
   }
   const facing=unit([cam.eye[0]-x,0,cam.eye[2]-z]);
   for (const side of [-1,1]) {
     orb(mesh,x+.54*facing[0]+side*.18*cam.right[0],middle+.5,z+.54*facing[2]+side*.18*cam.right[2],
-      .1,.12,.1,outline,1,6);
+      .1,.12,.1,outline,1,low ? 5 : 6,low ? 2 : 4);
   }
 }
 
-function cameraFor(yaw, focus, aspect, intro) {
+function cameraFor(yaw, focus, aspect, intro, benchmarkEye) {
   const direction = [Math.sin(yaw), 0, Math.cos(yaw)];
   const side = [Math.cos(yaw), 0, -Math.sin(yaw)];
-  const target = intro ? [focus[0] - side[0] * 15, 1.2, focus[2] - side[2] * 15] : [focus[0], 0.6 + focus[1], focus[2]];
+  const target = benchmarkEye ? focus :
+    intro ? [focus[0] - side[0] * 15, 1.2, focus[2] - side[2] * 15] : [focus[0], 0.6 + focus[1], focus[2]];
   const distance = intro ? 47 : 15;
-  const eye = [target[0] - direction[0] * distance, intro ? 27 : 11 + focus[1], target[2] - direction[2] * distance];
+  const eye = benchmarkEye ?? [target[0] - direction[0] * distance, intro ? 27 : 11 + focus[1], target[2] - direction[2] * distance];
   const forward = unit(sub(target, eye));
   const right = unit(cross([0, 1, 0], forward));
   const up = cross(forward, right);
@@ -357,11 +367,34 @@ export function createRenderer(canvas, effects, template) {
   if (!gl || !ctx) throw new Error('WebGL unavailable');
   const program = shaderProgram(gl);
   const attributes = ['aPosition', 'aColor', 'aGlow'].map(name => gl.getAttribLocation(program, name));
-  const uniforms = Object.fromEntries(['Eye', 'Right', 'Up', 'Forward', 'Scale', 'Lamps[0]', 'Warmth', 'May']
+  const uniforms = Object.fromEntries(['Eye', 'Right', 'Up', 'Forward', 'Scale', 'Lamps[0]', 'Warmth', 'May','Instanced']
     .map(name => [name, gl.getUniformLocation(program, 'u' + name)]));
   const islands=new Map();
   const objects=gl.createBuffer();
   const lampMeshes=new Map();
+  const shadeMeshes=new Map();
+  const sprites=new Map();
+  const instancing=gl.getExtension('ANGLE_instanced_arrays');
+  const instanceLocation=gl.getAttribLocation(program,'aInstance');
+  const instanceBuffer=instancing ? gl.createBuffer() : undefined;
+
+  function staticMesh(vertices) {
+    const buffer=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);
+    return {buffer,count:vertices.length/7};
+  }
+
+  function glowSprite(color,alpha) {
+    const key=color+':'+alpha;
+    if (!sprites.has(key)) {
+      const sprite=document.createElement('canvas');
+      sprite.width=sprite.height=64;
+      glow(sprite.getContext('2d'),32,32,32,color,alpha);
+      sprites.set(key,sprite);
+    }
+    return sprites.get(key);
+  }
   function loadGround(game) {
     if (!islands.has(game.night)) {
       const vertices=islandMesh(game);
@@ -380,16 +413,64 @@ export function createRenderer(canvas, effects, template) {
     ((i * 0.61803398875) % 1), ((i * 0.381833) % 1) * 0.69, 0.55 + (i % 7) * 0.13,
   ]);
 
-  function draw(buffer, count) {
+  function pointAttributes(buffer) {
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.vertexAttribPointer(attributes[0], 3, gl.FLOAT, false, 28, 0);
     gl.vertexAttribPointer(attributes[1], 3, gl.FLOAT, false, 28, 12);
     gl.vertexAttribPointer(attributes[2], 1, gl.FLOAT, false, 28, 24);
-    gl.drawArrays(gl.TRIANGLES, 0, count);
+  }
+
+  function draw(buffer,count) {
+    pointAttributes(buffer);
+    gl.drawArrays(gl.TRIANGLES,0,count);
+  }
+
+  function shadeInstances(game,view,cam,time,project,width,height,fallback) {
+    const groups=new Map();
+    for (const [i,shade] of game.shades.entries()) {
+      const screen=project(shade.pos);
+      if (!screen || screen[0]<-90 || screen[0]>width+90 || screen[1]<-90 || screen[1]>height+90) continue;
+      const [x,y,z]=shade.pos;
+      const low=screen[2]>24;
+      if (!instancing) {
+        drawShade(fallback,shade,time,i,cam,view.colorblind,low);
+        continue;
+      }
+      const stunned=shade.state==='stunned';
+      const key=[stunned,!!view.colorblind,low].join(':');
+      if (!shadeMeshes.has(key)) {
+        const vertices=[];
+        drawShade(vertices,{pos:[0,0,0],state:stunned?'stunned':'wander'},0,0,
+          {eye:[0,0,1],right:[1,0,0]},view.colorblind,low);
+        shadeMeshes.set(key,staticMesh(vertices));
+      }
+      if (!groups.has(key)) groups.set(key,[]);
+      const bob=Math.sin(time*3.1+i)*.18;
+      groups.get(key).push(x,y+bob,z,Math.atan2(cam.eye[0]-x,cam.eye[2]-z));
+    }
+    return groups;
+  }
+
+  function drawInstances(groups) {
+    if (!groups.size) return;
+    gl.uniform1i(uniforms.Instanced,1);
+    gl.enableVertexAttribArray(instanceLocation);
+    instancing.vertexAttribDivisorANGLE(instanceLocation,1);
+    for (const [key,instances] of groups) {
+      const mesh=shadeMeshes.get(key);
+      pointAttributes(mesh.buffer);
+      gl.bindBuffer(gl.ARRAY_BUFFER,instanceBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(instances),gl.DYNAMIC_DRAW);
+      gl.vertexAttribPointer(instanceLocation,4,gl.FLOAT,false,0,0);
+      instancing.drawArraysInstancedANGLE(gl.TRIANGLES,0,mesh.count,instances.length/4);
+    }
+    instancing.vertexAttribDivisorANGLE(instanceLocation,0);
+    gl.disableVertexAttribArray(instanceLocation);
+    gl.uniform1i(uniforms.Instanced,0);
   }
 
   return function render(game, view, now) {
-    const ratio = Math.min(1.5, window.devicePixelRatio || 1);
+    const ratio = view.benchmark ? 1 : Math.min(1.5, window.devicePixelRatio || 1);
     const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
     const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
     if (canvas.width !== width || canvas.height !== height || effects.width !== width || effects.height !== height) {
@@ -397,13 +478,31 @@ export function createRenderer(canvas, effects, template) {
       canvas.height = effects.height = height;
     }
     const time = now / 1000;
-    const cam = cameraFor(view.yaw, view.focus, width / height, view.intro);
+    const cam = cameraFor(view.yaw ?? 0, view.focus, width / height, view.intro,view.eye);
     function project(pos) {
       const delta = sub(pos, cam.eye);
       const depth = dot(delta, cam.forward);
       if (depth < 0.4) return null;
       return [(0.5 + 0.5 * dot(delta, cam.right) * cam.scale[0] / depth) * width,
         (0.5 - 0.5 * dot(delta, cam.up) * cam.scale[1] / depth) * height, depth];
+    }
+
+    function edgeArrow(pos,color) {
+      const delta=sub(pos,cam.eye);
+      const theta=Math.atan2(dot(delta,cam.right),dot(delta,cam.forward));
+      const ax=Math.sin(theta),ay=-Math.cos(theta);
+      const edge=Math.min((width/2-37)/Math.max(.001,Math.abs(ax)),
+        (height/2-104)/Math.max(.001,Math.abs(ay)));
+      ctx.save();
+      ctx.translate(width/2+ax*edge,height/2+ay*edge);
+      ctx.rotate(theta);
+      ctx.fillStyle=color;
+      ctx.strokeStyle='#101428';
+      ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,10);ctx.lineTo(0,6);ctx.lineTo(-9,10);ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
     }
 
     gl.viewport(0, 0, width, height);
@@ -421,15 +520,16 @@ export function createRenderer(canvas, effects, template) {
     gl.uniform3fv(uniforms['Lamps[0]'],lights);
     gl.uniform1f(uniforms.Warmth,.15+.55*game.lanterns.filter(l=>l.lit).length/game.lanterns.length);
     const mesh=[];
+    const staticLamps=[];
     for (const l of game.lanterns) {
       const dimmed=l.lit && dark(l);
       const key=game.night+':'+l.id+':'+l.lit+':'+dimmed;
       if (!lampMeshes.has(key)) {
         const vertices=[];
         drawLamp(vertices,l,dimmed);
-        lampMeshes.set(key,vertices);
+        lampMeshes.set(key,staticMesh(vertices));
       }
-      mesh.push(...lampMeshes.get(key));
+      staticLamps.push(lampMeshes.get(key));
     }
     for (const d of game.drifters) {
       const [x,y,z]=d.pos;
@@ -445,7 +545,7 @@ export function createRenderer(canvas, effects, template) {
     const mayLight = drawMay(mesh, { ...game, walking: view.walking }, view.heading, time);
     gl.uniform3fv(uniforms.May, mayLight);
 
-    for (let i=0;i<game.shades.length;i++) drawShade(mesh,game.shades[i],time,i,cam,view.colorblind);
+    const groups=shadeInstances(game,view,cam,time,project,width,height,mesh);
     const motes = game.motes.map((mote, i) => [
       mote.pos[0] + Math.sin(time * 2 + i) * 0.17,
       mote.pos[1] + 0.62 + Math.sin(time * 2.8 + i * 2.3) * 0.22,
@@ -459,6 +559,8 @@ export function createRenderer(canvas, effects, template) {
 
     const ground=loadGround(game);
     draw(ground.buffer,ground.count);
+    for (const lamp of staticLamps) draw(lamp.buffer,lamp.count);
+    drawInstances(groups);
     gl.bindBuffer(gl.ARRAY_BUFFER, objects);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh), gl.DYNAMIC_DRAW);
     draw(objects, mesh.length / 7);
@@ -475,7 +577,8 @@ export function createRenderer(canvas, effects, template) {
       ctx.save();
       ctx.translate(x * width, y * height);
       ctx.scale(2.7, 0.45);
-      glow(ctx, 0, 0, Math.max(140, width * 0.13), '176,195,198', 0.12);
+      const r=Math.max(140,width*.13);
+      ctx.drawImage(glowSprite('176,195,198',.12),-r,-r,2*r,2*r);
       ctx.restore();
     }
 
@@ -485,7 +588,7 @@ export function createRenderer(canvas, effects, template) {
       const [x, y, depth] = projection;
       const radius = clamp(worldRadius * height / depth, 4, 154);
       if (x < -radius || y < -radius || x > width + radius || y > height + radius) return;
-      glow(ctx, x, y, radius, color, alpha);
+      ctx.drawImage(glowSprite(color,alpha),x-radius,y-radius,radius*2,radius*2);
     }
     halo(mayLight, 0.55, '255,167,75', 0.56);
     for (const mote of motes) halo(mote, 0.47, '255,229,138', 0.57);
@@ -505,13 +608,13 @@ export function createRenderer(canvas, effects, template) {
         ctx.fillRect(sx-barWidth/2,sy,barWidth*fuelOf(lamp)/game.tuning.fuel_max,barHeight);
       }
       // Cosmetic orbit, drawn only by the graphical renderer.
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < (view.benchmark ? 0 : 8); i++) {
         const angle = time * 0.8 + i / 8 * TAU;
         const point = polar(x, z, 1.6 + 0.13 * i, angle, y + 2.2 + 0.45 * i + Math.sin(angle) * 0.25);
         halo(point, 0.23, '255,220,144', dimmed ? .30 : .72);
       }
     }
-    const leaves=game.wind.active || game.windWarn;
+    const leaves=!view.reducedMotion && (game.wind.active || game.windWarn);
     if (leaves) {
       const a=(game.wind.dir_deg ?? 30)*Math.PI/180;
       ctx.fillStyle='#e8df9c88';
@@ -520,25 +623,19 @@ export function createRenderer(canvas, effects, template) {
         ctx.fillRect(width*((i*.417)%1+t*Math.cos(a)*.55),height*((i*.267)%1+t*Math.sin(a)*.38),7,2);
       }
     }
-    if (!view.intro && game.state==='playing') {
+    if (!view.intro && !view.benchmark && game.state==='playing') {
       const p=game.player.pos;
       const range=l=>Math.hypot(l.pos[0]-p[0],l.pos[2]-p[2]);
       const lamp=game.lanterns.filter(l=>!l.lit).sort((a,b)=>range(a)-range(b))[0];
       if (lamp) {
         const pt=project([lamp.pos[0],lamp.pos[1]+3,lamp.pos[2]]);
         if (!pt || pt[0]<35 || pt[0]>width-35 || pt[1]<90 || pt[1]>height-85) {
-          const delta=sub(lamp.pos,p);
-          const theta=Math.atan2(dot(delta,cam.right),dot(delta,cam.forward));
-          const ax=Math.sin(theta),ay=-Math.cos(theta);
-          const f=Math.min((width/2-37)/Math.max(.001,Math.abs(ax)),(height/2-104)/Math.max(.001,Math.abs(ay)));
-          ctx.save();
-          ctx.translate(width/2+ax*f,height/2+ay*f);
-          ctx.rotate(theta);
-          ctx.fillStyle='#f2c14e';
-          ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,10);ctx.lineTo(0,6);ctx.lineTo(-9,10);ctx.closePath();ctx.fill();
-          ctx.restore();
+          edgeArrow(lamp.pos,'#f2c14e');
         }
       }
+    }
+    if (game.state==='playing' && view.spawnPositions) {
+      for (const position of view.spawnPositions) edgeArrow(position,view.colorblind?'#00b3ff':'#bb91ff');
     }
     if (view.playerLabel && !game.player.respawnAt) {
       const [x,y,z]=game.player.pos;
@@ -546,12 +643,12 @@ export function createRenderer(canvas, effects, template) {
       if (point) {
         const [sx,sy]=point;
         ctx.save();
-        ctx.font='650 '+Math.round(14*ratio)+'px system-ui, sans-serif';
+        ctx.font='650 '+Math.round((view.largeText ? 22.5 : 18)*ratio)+'px system-ui, sans-serif';
         ctx.textAlign='center';
         ctx.textBaseline='middle';
         const padding=9*ratio;
         const labelWidth=ctx.measureText(view.playerLabel).width+2*padding;
-        const labelHeight=24*ratio;
+        const labelHeight=(view.largeText ? 31 : 26)*ratio;
         ctx.fillStyle='#0e142ae8';
         ctx.beginPath();
         ctx.roundRect(sx-labelWidth/2,sy-labelHeight/2,labelWidth,labelHeight,5*ratio);
@@ -561,7 +658,7 @@ export function createRenderer(canvas, effects, template) {
         ctx.restore();
       }
     }
-    if (view.pulse && now - view.pulse.at < 580) {
+    if (!view.reducedMotion && view.pulse && now - view.pulse.at < 580) {
       const progress = clamp((now - view.pulse.at) / 580, 0, 1);
       const [x, , z] = view.pulse.pos;
       ctx.beginPath();

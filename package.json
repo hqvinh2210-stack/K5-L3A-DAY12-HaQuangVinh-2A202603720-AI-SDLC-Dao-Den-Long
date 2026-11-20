@@ -8,6 +8,7 @@
   },
   "scripts": {
     "start": "node src/serve.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "build:release": "node scripts/build-release.mjs"
   }
 }

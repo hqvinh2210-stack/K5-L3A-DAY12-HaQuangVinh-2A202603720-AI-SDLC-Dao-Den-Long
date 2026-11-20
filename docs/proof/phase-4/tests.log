@@ -1,0 +1,56 @@
+
+> dao-den-long@1.0.0 test
+> node --test
+
+✔ fixed ticks, starting state, partial frames and yaw mapping (356.2129ms)
+✔ diagonal movement is normalized and holding jump cannot repeat it (363.9298ms)
+✔ pickup radius includes boundary, capacity is enforced, and pickups award no score (321.9419ms)
+✔ interact allows partial deposit and uses a rising edge before lighting (272.7966ms)
+✔ interact ignores a lamp just beyond its radius (304.2036ms)
+✔ pulse uses radius, pushes, applies stun for its full duration, and costs light (306.1412ms)
+✔ pulse cooldown rejects early press and holding does not retrigger (654.6689ms)
+✔ shade contact consumes a flame, drops floor of the ratio and respects invulnerability (327.5828ms)
+✔ lit safe radius excludes chasing shades and prevents contact damage at the boundary (321.7502ms)
+✔ all lanterns lit does not win early and dawn awards the new bonus once (282.1897ms)
+✔ lose reasons distinguish no flames from dawn (483.6748ms)
+✔ scenario setup replaces lists, preserves untouched lamps and emits no events or score (210.4275ms)
+✔ random game logs are byte-identical across independent CLI runs (955.8795ms)
+✔ CLI uses exit 2 for malformed files and non-zero for command and filesystem errors (3372.3758ms)
+✔ dash lasts 12 ticks, holds air altitude, uses facing, and cools down from activation (614.9547ms)
+✔ Night 2 pads launch fixed velocity against input and land on the other island (618.319ms)
+✔ Night 3 pad lands on tier 2, sheer walls block, ramps climb and the tower stops movement (1455.1573ms)
+✔ Gió Lạc idles, chases, steals through invulnerability and flees once (306.3435ms)
+✔ Tỏa Sáng drives a chasing Gió Lạc away and recovers loot from a fleeing one (295.8475ms)
+✔ Bùa Gió refreshes for 600 ticks, grants 7.2 m/s and repeat dash, then respawns at 2700 (1416.3088ms)
+✔ Night 3 wind starts at 1800, adds 2 m/s, ends at 2100 and can be switched off (1474.8596ms)
+✔ pause arbitration freezes sim_tick, clock, dash and movement until the resume edge (506.4229ms)
+✔ fall is charged once through invulnerability, waits 60 ticks and resets velocity; fatal fall ends (978.9314ms)
+✔ a lamp newly lit ejects a resident shade for 30 ticks without damage (526.4705ms)
+✔ night_start and per-night spawn ticks and caps use the selected map (14450.9348ms)
+✔ height is checked for pickups and touch; win on the last tick only if alive (1518.1389ms)
+✔ full 18000-tick Night 3 settles well within 30s and is byte-identical (7386.2172ms)
+✔ fuel decay is integer-exact, then extinguishes and clears deposited on the exact tick (537.608ms)
+✔ refuel uses the ceiling, limits use by carried and caps fuel at 100 (1605.677ms)
+✔ a truly full lantern at interaction emits nothing and allows a farther eligible lantern (4.1554ms)
+✔ interaction selects the nearest acceptable lantern, with smaller id breaking a tie (1050.3111ms)
+✔ relight costs five rather than ten, counts as growth, and never grows above twenty (888.2565ms)
+✔ fuel at exactly thirty protects the area but a one-unit subsequent loss opens it (525.5223ms)
+✔ wander targets the nearest weak lamp over a nearer unlit one and starts draining at two metres (566.3832ms)
+✔ multiple drains stack immediately, log once per shade per 60 active ticks, and pause freezes them (564.4276ms)
+✔ drain exits to chase at six, stunned on pulse, and wander on empty or out of range (1946.2695ms)
+✔ refuel restores a safe zone, ends drain and ejects without damage in at most thirty ticks (609.8657ms)
+✔ dawn uses thresholds 3/5, 4/6, 5/7, extinguishes before counting and puts no_flames first (6850.0394ms)
+✔ benchmark metrics use all means, the slowest ceil(1%) and nearest-rank p95 (14.643ms)
+✔ measured benchmark artifact has the contract schema and a stable 200-shade scene (220.4298ms)
+✔ soak CLI completes ten Nights in one process within the memory threshold (1597.4999ms)
+✔ score validation, stable instant ties, top ten and exact offset timestamps (14.7162ms)
+✔ HTTP leaderboard survives server restart and CLI exports the same rankings (1413.04ms)
+✔ rebinding rejects collisions including aliases and keeps accessibility across reloads (4.4348ms)
+ℹ tests 44
+ℹ suites 0
+ℹ pass 44
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 56356.0653

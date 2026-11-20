@@ -410,7 +410,7 @@ function advanceFuel(game,emit) {
   }
 }
 
-function shadesStep(game, lamps) {
+function shadesStep(game, lamps, benchmark=false) {
   const { player:p, tuning:t, sim_tick:g } = game;
   const stride = (game.night === 3 ? t.shade_speed_night3 : t.shade_speed)*DT;
   for (const shade of game.shades) {
@@ -451,7 +451,7 @@ function shadesStep(game, lamps) {
       if (g < shade.expires) continue;
       shade.state = 'wander';
     }
-    if (!p.respawnAt && d <= t.shade_detect+EPS) shade.state='chase';
+    if (!benchmark && !p.respawnAt && d <= t.shade_detect+EPS) shade.state='chase';
     if (d>t.shade_lose+EPS || p.respawnAt) shade.state='wander';
     if (shade.state === 'chase' && d>EPS) {
       moveShade(game,lamps,shade,direction(shade.pos,p.pos),Math.min(stride,d));
@@ -472,6 +472,31 @@ function shadesStep(game, lamps) {
       moveShade(game,lamps,shade,[-Math.sin(a),Math.cos(a)],stride);
     }
   }
+}
+
+export function createBenchmarkScene(tuning,seed) {
+  const random=prng(seed);
+  const scatter=(count,y)=>{
+    const angle=random()*Math.PI*2;
+    return Array.from({length:count},(_,i)=>{
+      const radius=38*Math.sqrt((i+.5)/count);
+      const a=angle+i*Math.PI*(3-Math.sqrt(5));
+      return [radius*Math.cos(a),y,radius*Math.sin(a)];
+    });
+  };
+  return createGame(tuning,seed,{
+    random_motes:false,random_shades:false,random_drifters:false,wind_enabled:false,
+    shades:scatter(200,1).map(pos=>({pos,state:'wander'})),motes:scatter(100,0),
+    lanterns:[1,2,3].map(i=>({id:'L'+i,lit:true})),
+  });
+}
+
+export function stepBenchmarkScene(game) {
+  game.tick++;
+  game.sim_tick++;
+  const lamps=safeLamps(game);
+  ensureEjection(game,lamps);
+  shadesStep(game,lamps,true);
 }
 
 function driftersStep(game, emit) {

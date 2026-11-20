@@ -1,0 +1,28 @@
+full-a C:\Program Files\nodejs\node.exe src/headless.mjs --seed 42 --night 3 --ticks 18000 --out .testrun/phase4-compare/full-a.jsonl
+{"type":"end","ticks":18000,"state":"lost","score":0}
+elapsed_s=4.428 exit=0
+sha256=0bffc4de0edfc1105eaad0fba02c4610ec219d0320b8271d7a1cec1fd5888331
+
+full-b C:\Program Files\nodejs\node.exe src/headless.mjs --seed 42 --night 3 --ticks 18000 --out .testrun/phase4-compare/full-b.jsonl
+{"type":"end","ticks":18000,"state":"lost","score":0}
+elapsed_s=3.141 exit=0
+sha256=0bffc4de0edfc1105eaad0fba02c4610ec219d0320b8271d7a1cec1fd5888331
+
+full-phase3 C:\Program Files\nodejs\node.exe .testrun/phase4-compare/phase3/src/headless.mjs --seed 42 --night 3 --ticks 18000 --out .testrun/phase4-compare/full-phase3.jsonl
+{"type":"end","ticks":18000,"state":"lost","score":0}
+elapsed_s=2.796 exit=0
+sha256=0bffc4de0edfc1105eaad0fba02c4610ec219d0320b8271d7a1cec1fd5888331
+
+So sánh byte đêm đầy đủ: 1.3 A = 1.3 B = 1.2 ở tag phase-3
+
+dawn C:\Program Files\nodejs\node.exe src/headless.mjs --seed 1201 --night 1 --ticks 1680 --scenario docs/proof/phase-3/browser.scenario.json --inputs docs/proof/phase-3/browser.inputs.json --out .testrun/phase4-compare/dawn.jsonl
+{"type":"end","ticks":1680,"state":"won","score":515}
+elapsed_s=0.450 exit=0
+sha256=2125b66c3062db7c281e7315ec2c8ea80ab50a22d4128316413ffdddd84e6cee
+
+dawn-phase3 C:\Program Files\nodejs\node.exe .testrun/phase4-compare/phase3/src/headless.mjs --seed 1201 --night 1 --ticks 1680 --scenario docs/proof/phase-3/browser.scenario.json --inputs docs/proof/phase-3/browser.inputs.json --out .testrun/phase4-compare/dawn-phase3.jsonl
+{"type":"end","ticks":1680,"state":"won","score":515}
+elapsed_s=0.497 exit=0
+sha256=2125b66c3062db7c281e7315ec2c8ea80ab50a22d4128316413ffdddd84e6cee
+
+So sánh byte kịch bản bình minh: 1.3 = 1.2 ở tag phase-3

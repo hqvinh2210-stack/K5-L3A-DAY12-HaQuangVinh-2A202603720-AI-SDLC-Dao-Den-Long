@@ -1,9 +1,9 @@
 ---
 name: lantern-contract
-description: Kiểm chứng cơ chế, bản đồ và bản nộp Đảo Đèn Lồng theo Test Contract v1.2, đặc biệt là dầu, vùng trú và kết quả bình minh.
+description: Kiểm chứng thay đổi gameplay, hiệu năng WebGL và bản nộp Đảo Đèn Lồng theo Test Contract v1.3.
 ---
 
-- Đọc [ADR dầu và bình minh](../../../docs/adr/003-den-can-dau.md) rồi đối chiếu `game.contract.json` với thứ tự trong `src/sim.mjs`.
-- Ưu tiên kịch bản sát biên tick: trừ dầu trước khi di chuyển, châm dầu trước khi tính vùng trú, hết Ngọn Lửa trước xét điểm bình minh. Kiểm tra mức dầu bằng đơn vị 1/60 ở lõi vì dầu trên snapshot chỉ có một chữ số thập phân.
-- Chạy `npm test`. Chạy lại cùng seed, kịch bản và đầu vào ở hai tiến trình CLI, so theo byte và đo một đêm đủ 18.000 tick. Ghi lý do khi sửa hoặc bỏ ca của hợp đồng cũ.
-- Nếu có thay đổi đồ họa hoặc HUD, kiểm tra bản `npm start` và ghi rõ các thao tác thực hiện. Phân biệt kịch bản dựng sẵn và lượt chơi mặc định. Lưu bằng chứng ở [chỉ mục](../../../docs/proof/README.md).
+- Đối chiếu `src/sim.mjs` với `game.contract.json` và [ADR dầu và bình minh](../../../docs/adr/003-den-can-dau.md) khi thay đổi cơ chế. Kiểm tra cả hai phía của các ngưỡng và tick cuối.
+- Chạy `npm test`. So JSONL từng byte giữa hai tiến trình và với tag gần nhất khi luật giữ nguyên. Xác nhận đầu ra kết thúc và thời gian của một đêm đầy đủ.
+- Đo đúng cửa sổ Chromium 1280×720 bằng lệnh benchmark trong README, chờ đủ thời gian làm nóng và đo. Ghi renderer, OS và vsync. Dùng kết quả thật của soak để xác nhận RSS sau thu gom.
+- Khi chuẩn bị tag, thử cài ở bản clone sạch và mở gói web đã giải nén. Lưu [bằng chứng](../../../docs/proof/README.md) rồi đối chiếu [bước phát hành](../../../docs/release/README.md) với những gì người nộp thực hiện.

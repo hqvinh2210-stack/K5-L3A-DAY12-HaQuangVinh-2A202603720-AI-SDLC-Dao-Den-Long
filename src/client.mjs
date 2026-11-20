@@ -1,6 +1,8 @@
 import { createGame, fuelOf, IDLE, lightCost, nearestUsableLantern, requiredLights, stepGame, timeLeft, TICKS_PER_SECOND } from './sim.mjs';
 import { createRenderer } from './render.mjs';
 import { createAudio } from './audio.mjs';
+import { scoreUI } from './leaderboard-ui.mjs';
+import { actionAtKey, actionLabels, bindingConflict, defaultBindings, keyLabel, parseSettings, reservedKeys } from './settings.mjs';
 
 const $=id=>document.getElementById(id);
 const text=(id,value)=>{ const el=$(id); if (el.textContent!==value) el.textContent=value; };
@@ -9,13 +11,12 @@ const chapters=[
   ['Đảo Cau','Qua cầu tre hoặc bước lên bệ nhảy để sang đảo bên. Gió Lạc thích ánh sáng, còn Bùa Gió sẽ giúp cháu Lướt liên tiếp.'],
   ['Đảo Chuông','Theo hai dốc cát lên tầng giữa, rồi dùng bệ nhảy lên tháp chuông. Khi lá bay, hãy coi chừng gió mạnh bên mép đảo.'],
 ];
-const screenIds={menu:'intro',intro:'night-intro',pause:'pause',settings:'settings',result:'end'};
-const focusIds={menu:'start',intro:'enter-night',pause:'resume',settings:'volume',result:'result-action'};
+const screenIds={menu:'intro',intro:'night-intro',pause:'pause',settings:'settings',result:'end',leaderboard:'leaderboard'};
+const focusIds={menu:'start',intro:'enter-night',pause:'resume',settings:'volume',result:'result-action',leaderboard:'close-leaderboard'};
 const keys=new Set(), queued=new Set();
-const actions=new Map([['Space','jump'],['KeyE','interact'],['KeyF','pulse'],['ShiftLeft','dash'],['ShiftRight','dash']]);
-const control=new Set([...actions.keys(),'KeyW','KeyA','KeyS','KeyD','KeyQ','KeyR',
-  'ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Escape','KeyP']);
+const instantActions=new Set(['jump','dash','interact','pulse']);
 const audio=createAudio();
+const scores=scoreUI();
 const nameInput=$('player-name');
 const cleanName=value=>value.trim().normalize('NFC').slice(0,24);
 let playerName='';
@@ -23,28 +24,26 @@ try { nameInput.value=cleanName(localStorage.getItem('dao-den-long-player') ?? '
 const map=$('map').getContext('2d');
 const scoreFormat=new Intl.NumberFormat('vi-VN');
 const STEP=1000/TICKS_PER_SECOND;
-const defaults={volume:60,sensitivity:100,colorblind:false};
 const seed=1201;
 let tuning, render, game, preview;
-let screen='menu', settingsReturn='menu', night=1, total=0;
+let screen='menu', settingsReturn='menu', night=1, total=0, nightsWon=0;
 let yaw=0, heading=0, focus=[0,0,0], logicalPause=false, dragging=false;
 let lastFrame, accumulated=0, pulse, feedback, resultReason, lastMap=0;
-let lastSecond=Infinity, warned=false, perfStart, perfFrames=0;
-let preferences={...defaults};
-try {
-  const saved=JSON.parse(localStorage.getItem('dao-den-long-settings') ?? '{}');
-  for (const key of ['volume','sensitivity']) if (Number.isFinite(saved?.[key])) preferences[key]=saved[key];
-  preferences.colorblind=saved?.colorblind===true;
-} catch { /* Storage can be disabled. */ }
+let lastSecond=Infinity, warned=false, perfStart, perfFrames=0, spawnNotices=[], captureBinding;
+let preferences=parseSettings(null);
+try { preferences=parseSettings(localStorage.getItem('dao-den-long-settings')); }
+catch { /* Storage can be disabled. */ }
 
 function display(next) {
   screen=next;
+  if (next!=='settings') captureBinding=undefined;
   for (const [key,id] of Object.entries(screenIds)) $(id).hidden=key!==screen;
   const sceneIsLive=screen==='playing' || screen==='pause' || screen==='result' ||
     (screen==='settings' && settingsReturn==='pause');
   document.body.classList.toggle('playing',sceneIsLive);
   for (const id of ['stats','navigation','inventory','cooldowns']) $(id).hidden=!sceneIsLive;
   $('hint').hidden=screen!=='playing';
+  $('captions').hidden=true;
   if (focusIds[screen]) $(focusIds[screen]).focus();
   else document.activeElement?.blur();
 }
@@ -66,6 +65,7 @@ function begin() {
   keys.clear();
   queued.clear();
   pulse=feedback=resultReason=undefined;
+  spawnNotices=[];
   logicalPause=false;
   accumulated=lastMap=0;
   lastSecond=Infinity;
@@ -81,13 +81,14 @@ function home() {
   keys.clear();
   queued.clear();
   total=0;
+  nightsWon=0;
   text('chapter','Ba hòn đảo');
   display('menu');
 }
 
 function endGame() {
   const win=game.state==='won';
-  if (win) total+=game.score;
+  if (win) { total+=game.score; nightsWon++; }
   const complete=win && night===3;
   text('result-night','ĐÊM '+night+' · '+chapters[night-1][0]);
   text('outcome',complete ? 'Bình Minh' : win ? 'Vượt qua đêm tối!' : 'Đêm chưa tan');
@@ -99,6 +100,7 @@ function endGame() {
   text('result-player','Người chơi · '+playerName);
   text('final-score',(complete ? 'Tổng điểm · ' : 'Điểm đêm này · ')+scoreFormat.format(complete ? total : game.score));
   text('result-action',complete ? 'Về menu chính' : win ? 'Sang đêm tiếp theo' : 'Thử lại đêm này');
+  scores.offer(complete || !win ? {score:total,nights_won:nightsWon,seed} : null,playerName);
   display('result');
 }
 
@@ -179,24 +181,34 @@ function updateHud(now) {
   text('pulse-cd','✦ Tỏa Sáng · '+cd(p.pulseReadyAt));
   if (now-lastMap>70) { drawMap(); lastMap=now; }
   const lamp=nearestUsableLantern(game);
+  const interactKey=keyLabel(preferences.bindings.interact);
   const message=p.respawnAt ? 'Mây đang trở về điểm xuất phát…' : lamp ?
-    lamp.lit ? 'E — Châm dầu ('+Math.floor(fuelOf(lamp))+'/'+tuning.fuel_max+')' :
-      'E — '+(lamp.ever_lit ? 'Thắp lại' : 'Nạp ánh sáng')+' ('+lamp.deposited+'/'+lightCost(tuning,lamp)+')' :
-    game.windWarn ? 'Gió mạnh sắp tới. Hãy tránh mép đảo!' :
+    lamp.lit ? interactKey+' — Châm dầu ('+Math.floor(fuelOf(lamp))+'/'+tuning.fuel_max+')' :
+      interactKey+' — '+(lamp.ever_lit ? 'Thắp lại' : 'Nạp ánh sáng')+' ('+lamp.deposited+'/'+lightCost(tuning,lamp)+')' :
     feedback && now<feedback.until ? feedback.message :
     g<p.charmUntil ? 'Bùa Gió · Lướt không chờ hồi chiêu' : 'Tìm đom đóm và theo ánh đèn trên bản đồ.';
   text('hint',message);
+  const low=game.lanterns.filter(l=>l.lit && fuelOf(l)<tuning.low_fuel_threshold).length;
+  const captions=[];
+  spawnNotices=spawnNotices.filter(notice=>g<notice.until);
+  if (spawnNotices.length) captions.push(spawnNotices.length+' Bóng Mực xuất hiện!');
+  if (game.windWarn) captions.push('Gió mạnh sắp tới!');
+  if (seconds>0 && seconds<=10) captions.push('Bình minh sau '+seconds+' giây.');
+  if (low) captions.push((preferences.colorblind ? '⚠ ' : '')+low+' đèn sắp cạn dầu.');
+  $('captions').hidden=!captions.length;
+  text('captions',captions.join(' · '));
   if (seconds!==lastSecond && seconds>0 && seconds<=10) audio.play('countdown');
   lastSecond=seconds;
 }
 
 function controls() {
-  const active=(a,b)=>Number(keys.has(a)||keys.has(b));
+  const pressed=new Set([...keys].map(code=>actionAtKey(preferences.bindings,code)));
+  const active=action=>Number(pressed.has(action));
   const input={...IDLE};
-  input.move=[active('KeyD','ArrowRight')-active('KeyA','ArrowLeft'),active('KeyW','ArrowUp')-active('KeyS','ArrowDown')];
+  input.move=[active('right')-active('left'),active('up')-active('down')];
   if (screen==='playing') yaw+=(Number(keys.has('KeyR'))-Number(keys.has('KeyQ')))*.024;
   input.cam_yaw_deg=yaw*180/Math.PI;
-  for (const [key,action] of actions) input[action] ||= keys.has(key)||queued.has(action);
+  for (const action of instantActions) input[action]=pressed.has(action)||queued.has(action);
   input.pause=logicalPause;
   logicalPause=false;
   queued.clear();
@@ -218,6 +230,7 @@ function consume(input,now) {
   for (const e of stepGame(game,input)) {
     audio.play(e.name);
     if (notifications[e.name]) feedback={until:now+1700,message:notifications[e.name]};
+    if (e.name==='shade_spawned') spawnNotices.push({id:e.data.id,until:game.sim_tick+5*TICKS_PER_SECOND});
     if (e.name==='pulse') pulse={at:now,pos:[...game.player.pos]};
     if (e.name==='paused') { keys.clear(); display('pause'); }
     if (e.name==='resumed') display('playing');
@@ -254,10 +267,16 @@ function animate(now) {
   const live=document.body.classList.contains('playing');
   const walking=live && Math.hypot(game.player.vel[0],game.player.vel[2])>.1 && game.player.grounded;
   render(live ? game : preview,{
-    intro:!live, yaw:live ? yaw : 2.82+Math.sin(now*.00015)*.14,
+    intro:!live, yaw:live ? yaw : 2.82+(preferences.reducedMotion ? 0 : Math.sin(now*.00015)*.14),
     heading:live ? heading : 2, focus:live ? focus : [0,0,11], pulse, walking,
     playerLabel:live ? playerName : '',
     colorblind:preferences.colorblind,
+    reducedMotion:preferences.reducedMotion,
+    largeText:preferences.largeText,
+    spawnPositions:live ? spawnNotices.flatMap(({id})=>{
+      const shade=game.shades.find(item=>item.id===id);
+      return shade ? [shade.pos] : [];
+    }) : [],
   },now);
   if (screen==='playing') {
     perfStart??=now;
@@ -282,14 +301,64 @@ function saveSettings() {
   try { localStorage.setItem('dao-den-long-settings',JSON.stringify(preferences)); } catch { /* Storage can be disabled. */ }
 }
 
-const palette=$('colorblind');
-palette.checked=preferences.colorblind;
-document.body.classList.toggle('colorblind',palette.checked);
-palette.addEventListener('change',()=>{
-  preferences.colorblind=palette.checked;
-  document.body.classList.toggle('colorblind',palette.checked);
+for (const [id,property] of [['colorblind','colorblind'],['reduced-motion','reducedMotion'],['large-text','largeText']]) {
+  const checkbox=$(id);
+  checkbox.checked=preferences[property];
+  document.body.classList.toggle(id,checkbox.checked);
+  checkbox.addEventListener('change',()=>{
+    preferences[property]=checkbox.checked;
+    document.body.classList.toggle(id,checkbox.checked);
+    saveSettings();
+  });
+}
+
+const bindingButtons=new Map();
+for (const [action,label] of Object.entries(actionLabels)) {
+  const item=document.createElement('button');
+  item.type='button';
+  item.className='secondary';
+  item.onclick=()=>{
+    captureBinding=action;
+    text('binding-status','Nhấn phím mới cho “'+label+'”.');
+  };
+  $('binding-list').append(item);
+  bindingButtons.set(action,item);
+}
+function updateBindings() {
+  const bindings=preferences.bindings;
+  for (const [action,item] of bindingButtons) item.textContent=actionLabels[action]+' · '+keyLabel(bindings[action]);
+  text('move-key',['up','left','down','right'].map(action=>keyLabel(bindings[action])).join(' '));
+  for (const action of instantActions) text(action+'-key',keyLabel(bindings[action]));
+  text('pause-key',bindings.pause===defaultBindings.pause ? 'Esc / P' : keyLabel(bindings.pause));
+}
+updateBindings();
+$('restore-bindings').onclick=()=>{
+  captureBinding=undefined;
+  preferences.bindings={...defaultBindings};
+  updateBindings();
   saveSettings();
-});
+  text('binding-status','Đã khôi phục phím mặc định.');
+};
+
+function captureKey(event) {
+  if (event.repeat || event.isComposing) return;
+  event.preventDefault();
+  const key=event.code;
+  const conflict=bindingConflict(preferences.bindings,captureBinding,key);
+  if (conflict) {
+    text('binding-status','Phím '+keyLabel(key)+' đã dùng cho “'+actionLabels[conflict]+'”. Chọn phím khác.');
+    return;
+  }
+  if (reservedKeys.has(key) || !/^[A-Za-z][A-Za-z0-9]*$/.test(key) || event.metaKey || event.altKey) {
+    text('binding-status','Phím này không dùng được. Chọn phím khác.');
+    return;
+  }
+  preferences.bindings[captureBinding]=key;
+  captureBinding=undefined;
+  updateBindings();
+  saveSettings();
+  text('binding-status','Đã lưu phím '+keyLabel(key)+'.');
+}
 
 for (const id of ['volume','sensitivity']) {
   const input=$(id);
@@ -313,6 +382,7 @@ $('start').onclick=()=>{
   try { localStorage.setItem('dao-den-long-player',name); } catch { /* Storage can be disabled. */ }
   audio.unlock();
   total=0;
+  nightsWon=0;
   intro(1);
 };
 nameInput.addEventListener('keydown',event=>{
@@ -348,16 +418,20 @@ $('result-action').onclick=()=>game.state==='lost' ? begin() : night<3 ? intro(n
 $('menu-settings').onclick=()=>settings('menu');
 $('pause-settings').onclick=()=>settings('pause');
 $('close-settings').onclick=()=>display(settingsReturn);
+$('open-leaderboard').onclick=()=>{ display('leaderboard'); scores.show(); };
+$('close-leaderboard').onclick=()=>display('menu');
 
 window.addEventListener('keydown',e=>{
-  if (!control.has(e.code)) return;
+  if (screen==='settings' && captureBinding) { captureKey(e); return; }
   if (e.code==='Escape' && screen==='settings') { display(settingsReturn); return; }
   if (screen!=='playing' && screen!=='pause') return;
-  const isPause=e.code==='Escape'||e.code==='KeyP';
+  const action=actionAtKey(preferences.bindings,e.code);
+  if (!action && e.code!=='KeyQ' && e.code!=='KeyR') return;
+  const isPause=action==='pause';
   if (screen==='pause' && !isPause) return;
   e.preventDefault();
   if (isPause && !e.repeat) pauseToggle();
-  if (actions.has(e.code) && !e.repeat) queued.add(actions.get(e.code));
+  if (instantActions.has(action) && !e.repeat) queued.add(action);
   keys.add(e.code);
 });
 window.addEventListener('keyup',e=>keys.delete(e.code));

@@ -3,7 +3,7 @@ name: Lantern Island contract
 on:
   push:
     branches: [main]
-    tags: [phase-1, phase-2, phase-3]
+    tags: [phase-1, phase-2, phase-3, phase-4]
 
 jobs:
   contract:

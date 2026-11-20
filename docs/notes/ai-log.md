@@ -17,3 +17,7 @@ Codex đối chiếu số chuẩn, chuyển mô phỏng và CLI sang v1.1, viế
 ## Phase 3
 
 Codex ghi ADR, triển khai mô hình dầu nguyên và luật bình minh, cập nhật hồi quy CLI, chạy so sánh nhị phân và đo một đêm đầy đủ. Kiểm tra trình duyệt dùng kịch bản ba đèn sáng để xác nhận bảng màu lưu được, châm dầu và màn thắng.
+
+## Phase 4
+
+Codex triển khai phép đo Chromium, lấy baseline, tối ưu renderer, chạy soak, viết bảng điểm và trợ năng. Log chỉ dùng đầu ra thật. Kiểm tra giao diện ở bản thường và kịch bản rút ngắn, rồi chuẩn bị gói web cùng hướng dẫn phát hành.

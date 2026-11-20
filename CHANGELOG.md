@@ -1,5 +1,12 @@
 # Nhật ký thay đổi
 
+## Phase 4 — Bình minh: chuẩn bị phát hành v1.0.0
+
+- Test Contract v1.3 thêm benchmark WebGL và soak test. Hồi quy giữ nguyên luật và định dạng headless trước đó.
+- Dùng lại lưới và quầng sáng, cắt vật thể ngoài khung hình và vẽ Bóng Mực theo lô.
+- Thêm bảng điểm cục bộ, xuất JSON và trợ năng: đổi phím, chú thích, giảm chuyển động và chữ lớn.
+- Thêm gói web tự chạy, bằng chứng cài sạch, retro và danh sách bước để chủ repo phát hành.
+
 ## Phase 3 — Đèn cạn dầu
 
 - Thay luật thắng ngay `all_lit` bằng `dawn_survived` khi đủ 3/5, 4/6 hoặc 5/7 đèn ở tick bình minh. Thời hạn đổi thành 240, 270 và 300 giây.

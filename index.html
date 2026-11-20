@@ -33,6 +33,7 @@
     </label>
     <div class="actions">
       <button class="action" id="start" disabled>Bắt đầu chơi</button>
+      <button class="secondary" id="open-leaderboard">Bảng xếp hạng</button>
       <button class="secondary" id="menu-settings">Cài đặt</button>
     </div>
     <p class="error" id="error" role="alert" hidden></p>
@@ -45,6 +46,7 @@
   </aside>
 
   <div id="hint" class="hint" role="status" hidden></div>
+  <div id="captions" class="captions" role="status" aria-live="polite" hidden></div>
   <div id="inventory" class="inventory" hidden>
     <span id="inventory-label"></span>
     <div id="mote-bar" class="mote-bar" aria-hidden="true"></div>
@@ -54,13 +56,13 @@
     <button id="pulse-cd" class="cooldown" tabindex="-1" aria-label="Hồi chiêu Tỏa Sáng"></button>
   </div>
   <footer class="controls" aria-label="Phím điều khiển">
-    <span><kbd>W A S D</kbd> Đi</span>
+    <span><kbd id="move-key">W A S D</kbd> Đi</span>
     <span><kbd>Q / R</kbd> Xoay góc nhìn</span>
-    <span><kbd>Cách</kbd> Nhảy</span>
-    <span><kbd>Shift</kbd> Lướt</span>
-    <span><kbd>E</kbd> Nạp ánh sáng</span>
-    <span><kbd>F</kbd> Tỏa Sáng</span>
-    <span><kbd>Esc / P</kbd> Tạm dừng</span>
+    <span><kbd id="jump-key">Cách</kbd> Nhảy</span>
+    <span><kbd id="dash-key">Shift</kbd> Lướt</span>
+    <span><kbd id="interact-key">E</kbd> Nạp ánh sáng</span>
+    <span><kbd id="pulse-key">F</kbd> Tỏa Sáng</span>
+    <span><kbd id="pause-key">Esc / P</kbd> Tạm dừng</span>
   </footer>
 
   <section class="end" id="night-intro" role="dialog" aria-modal="true" aria-labelledby="night-title" hidden>
@@ -95,12 +97,32 @@
       <label class="accessibility-setting">
         <input id="colorblind" type="checkbox"> Bảng màu dễ phân biệt
       </label>
+      <label class="accessibility-setting">
+        <input id="reduced-motion" type="checkbox"> Giảm chuyển động
+      </label>
+      <label class="accessibility-setting">
+        <input id="large-text" type="checkbox"> Chữ lớn (125%)
+      </label>
+      <details class="key-settings">
+        <summary>Đổi phím điều khiển</summary>
+        <div id="binding-list" class="binding-list"></div>
+        <p id="binding-status" role="status"></p>
+        <button class="secondary" id="restore-bindings">Khôi phục mặc định</button>
+      </details>
       <label class="setting soundtrack">Nhạc nền
         <input id="soundtrack" type="file" accept="audio/*,.mp3,.m4a,.ogg,.wav,.flac">
       </label>
       <p id="soundtrack-status" class="soundtrack-status" role="status">Đang dùng nhạc của trò chơi.</p>
       <button class="secondary" id="reset-soundtrack" hidden>Dùng nhạc mặc định</button>
       <button class="action" id="close-settings">Quay lại</button>
+    </div>
+  </section>
+  <section class="end" id="leaderboard" role="dialog" aria-modal="true" aria-labelledby="leaderboard-title" hidden>
+    <div class="end-card">
+      <h2 id="leaderboard-title">Bảng xếp hạng</h2>
+      <p id="leaderboard-status" role="status"></p>
+      <ol id="leaderboard-entries" class="leaderboard-entries"></ol>
+      <button class="action" id="close-leaderboard">Quay lại</button>
     </div>
   </section>
   <section class="end" id="end" role="dialog" aria-modal="true" aria-labelledby="outcome" hidden>
@@ -110,6 +132,14 @@
       <p id="summary"></p>
       <p id="result-player" class="result-player"></p>
       <p id="final-score" class="final-score"></p>
+      <form id="score-form" class="score-form" novalidate hidden>
+        <label class="player-name">Tên trên bảng xếp hạng
+          <input id="score-name" autocomplete="nickname" aria-describedby="score-rule score-status">
+        </label>
+        <p id="score-rule">Dùng 3–12 chữ cái, chữ số hoặc dấu gạch dưới. Chấp nhận tiếng Việt có dấu.</p>
+        <button type="submit" class="secondary" id="save-score">Lưu điểm</button>
+        <p id="score-status" role="status"></p>
+      </form>
       <div class="actions">
         <button class="action" id="result-action"></button>
         <button class="secondary" id="result-home">Về menu</button>

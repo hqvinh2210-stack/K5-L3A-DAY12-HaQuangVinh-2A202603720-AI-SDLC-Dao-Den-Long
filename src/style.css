@@ -172,3 +172,65 @@ body.playing .identity { margin-left: 155px; }
   .navigation { bottom: 138px; }
   .hint { bottom: 151px; max-width: calc(100vw - 153px); }
 }
+
+body { --ui-font: 18px; }
+body.large-text { --ui-font: 22.5px; }
+.identity strong, .identity div > span, .stat span, .stat strong, .story, .action, .secondary,
+.player-name, .player-name input, .eyebrow, .end-card > p, .map-title span:first-child,
+.map-title span:last-child, .map-key, .hint, .inventory span, .cooldown, .controls, kbd,
+.setting, .setting input, .setting.soundtrack input, .end-card .soundtrack-status,
+.end-card .eyebrow, .accessibility-setting, .key-settings, .key-settings button,
+.score-form, .score-form p, .leaderboard-entries, .error, .captions {
+  font-size: var(--ui-font);
+}
+.identity div > span { padding-top: 2px; }
+.top { padding-top: 18px; }
+.stats .stat:first-child, .stats .clock { top: 18px; }
+.controls { gap: 5px clamp(6px,1.2vw,18px); padding: 9px 10px 11px; }
+.controls kbd { margin-right: 2px; }
+.stat { padding-inline: 9px; }
+.intro { top: 47%; max-height: calc(100dvh - 106px); overflow: auto; padding-bottom: 3px; }
+.end-card { padding: clamp(18px,4vw,40px); }
+.navigation { width: min(199px,22vw); bottom: 138px; }
+.map-title, .map-key { flex-wrap: wrap; }
+.map-key { gap: 4px; }
+.cooldowns, .inventory { bottom: 74px; }
+.hint { bottom: 144px; }
+.captions {
+  position: fixed; left: 50%; transform: translateX(-50%); top: 82px;
+  width: max-content; max-width: min(720px,92vw); padding: 7px 12px;
+  text-align: center; color: #f5f1e6; background: #17162bea;
+  border: 1px solid #82719d; border-radius: 5px; pointer-events: none;
+}
+.large-text .controls { gap: 4px 10px; }
+.large-text .cooldowns, .large-text .inventory { bottom: 106px; }
+.large-text .navigation { bottom: 182px; }
+.large-text .hint { bottom: 178px; }
+.reduced-motion *, .reduced-motion *::before, .reduced-motion *::after {
+  scroll-behavior: auto !important;
+  animation: none !important;
+  transition: none !important;
+}
+.key-settings { margin: 16px 0; }
+.key-settings summary { cursor: pointer; }
+.binding-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 6px; margin-top: 9px; }
+.binding-list button { text-align: left; overflow-wrap: anywhere; }
+.score-form { margin: 12px 0 16px; }
+.score-form p { margin: 5px 0 10px; }
+.leaderboard-entries { padding-inline-start: 28px; }
+.leaderboard-entries li { padding: 8px 4px; border-bottom: 1px solid var(--line); }
+.leaderboard-entries li span, .leaderboard-entries li time { display: block; margin-top: 3px; color: #e0dcca; }
+.leaderboard-entries li strong { overflow-wrap: anywhere; }
+@media(max-width:770px) {
+  .stats { top: 12px; }
+  .stats .stat:first-child, .stats .clock { top: 12px; }
+  .stats .stat:first-child { left: 9px; }
+  .stat { padding-inline: 5px; }
+  .stats .clock { position: static; transform: none; }
+  .navigation { bottom: 174px; width: 120px; }
+  .cooldowns, .inventory, .large-text .cooldowns, .large-text .inventory { bottom: 101px; }
+  .inventory { left: 10px; transform: none; max-width: calc(100vw - 204px); }
+  .hint, .large-text .hint { bottom: 177px; }
+  .intro { left: 16px; top: 48%; max-height: calc(100dvh - 138px); }
+  .binding-list { grid-template-columns: minmax(0,1fr); }
+}
