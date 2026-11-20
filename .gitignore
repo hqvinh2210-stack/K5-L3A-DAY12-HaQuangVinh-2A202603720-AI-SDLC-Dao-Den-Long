@@ -2,3 +2,4 @@ node_modules/
 .testrun/
 *.tmp
 dist/
+demo.mp4
