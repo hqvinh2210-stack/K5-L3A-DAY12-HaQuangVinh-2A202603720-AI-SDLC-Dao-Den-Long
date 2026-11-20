@@ -441,7 +441,7 @@ window.addEventListener('pointerup',()=>{ dragging=false; });
 window.addEventListener('pointermove',e=>{ if (dragging && screen==='playing') yaw-=e.movementX*.004*preferences.sensitivity/100; });
 
 try {
-  const response=await fetch('/game.contract.json');
+  const response=await fetch(new URL('../game.contract.json',import.meta.url));
   if (!response.ok) throw new Error('Cannot read game contract');
   ({tuning}=await response.json());
   const template=createGame(tuning,seed);

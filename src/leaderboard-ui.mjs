@@ -1,6 +1,7 @@
 import { normalizeName, timestampWithOffset, topScores } from './scores.mjs';
 
 const localKey='dao-den-long-scores';
+const scoreEndpoint=new URL('../api/leaderboard',import.meta.url);
 const number=new Intl.NumberFormat('vi-VN');
 const date=new Intl.DateTimeFormat('vi-VN',{dateStyle:'short',timeStyle:'short'});
 
@@ -10,7 +11,7 @@ function browserScores() {
 }
 
 async function readScores() {
-  const response=await fetch('/api/leaderboard');
+  const response=await fetch(scoreEndpoint);
   const isJson=response.headers.get('content-type')?.includes('application/json');
   if ([404,405,501].includes(response.status) || (response.ok && !isJson)) {
     return {entries:browserScores(),local:true};
@@ -25,7 +26,7 @@ async function addScore(entry) {
     localStorage.setItem(localKey,JSON.stringify({entries:topScores([...board.entries,entry])}));
     return;
   }
-  const response=await fetch('/api/leaderboard',{method:'POST',
+  const response=await fetch(scoreEndpoint,{method:'POST',
     headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
   if (!response.ok) throw new Error('Score API failed');
 }
