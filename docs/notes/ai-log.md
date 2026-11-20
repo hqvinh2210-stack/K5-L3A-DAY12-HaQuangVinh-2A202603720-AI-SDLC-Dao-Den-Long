@@ -13,3 +13,7 @@
 ## Phase 2
 
 Codex đối chiếu số chuẩn, chuyển mô phỏng và CLI sang v1.1, viết ca kiểm thử mới rồi dựng tiếp giao diện WebGL. Các lệnh headless được chạy thật để lấy log, số tick và kết quả lặp. Kiểm tra giao diện dùng bản mặc định để đo FPS và một máy chủ QA tạm để xác minh màn chuyển đêm.
+
+## Phase 3
+
+Codex ghi ADR, triển khai mô hình dầu nguyên và luật bình minh, cập nhật hồi quy CLI, chạy so sánh nhị phân và đo một đêm đầy đủ. Kiểm tra trình duyệt dùng kịch bản ba đèn sáng để xác nhận bảng màu lưu được, châm dầu và màn thắng.

@@ -1,7 +1,7 @@
 import { createWriteStream } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
-import { IDLE, createGame, snapshot, stepGame } from './sim.mjs';
+import { IDLE, carryCapacity, createGame, lightCost, snapshot, stepGame } from './sim.mjs';
 
 import { MAPS } from './maps.mjs';
 
@@ -54,7 +54,8 @@ function validateScenario(scenario, tuning, night) {
     const player = scenario.player;
     requireField(object(player), 'scenario.player');
     optional(player, 'pos', coordinates, 'scenario.player');
-    optional(player, 'carried', natural(tuning.carry_capacity), 'scenario.player');
+    optional(player, 'successful_lights', natural(Number.MAX_SAFE_INTEGER), 'scenario.player');
+    optional(player, 'carried', natural(carryCapacity(tuning,player.successful_lights ?? 0)), 'scenario.player');
     optional(player, 'flames', natural(tuning.flames), 'scenario.player');
     for (const key of ['invuln_ticks','dash_cd_ticks','pulse_cd_ticks','charm_ticks']) {
       optional(player, key, natural(Number.MAX_SAFE_INTEGER), 'scenario.player');
@@ -66,14 +67,16 @@ function validateScenario(scenario, tuning, night) {
   optional(scenario, 'motes', value => Array.isArray(value) && value.every(coordinates), 'scenario');
   optional(scenario, 'shades', Array.isArray, 'scenario');
   optional(scenario, 'lanterns', Array.isArray, 'scenario');
+  const lampIds = new Set(Array.from({ length: MAPS[night].lanterns.length }, (_, i) => 'L' + (i + 1)));
   const shadeIds = new Set();
   for (const [i, shade] of (scenario.shades ?? []).entries()) {
     const path = 'scenario.shades[' + i + ']';
     requireField(object(shade) && coordinates(shade.pos), path);
     optional(shade, 'id', id => typeof id === 'string' && id.length > 0 && !shadeIds.has(id), path);
     if (shade.id !== undefined) shadeIds.add(shade.id);
-    optional(shade, 'state', v => ['spawning','wander','chase','recoil','stunned'].includes(v),path);
+    optional(shade, 'state', v => ['spawning','wander','chase','recoil','stunned','drain'].includes(v),path);
     optional(shade, 'state_ticks_left', natural(Number.MAX_SAFE_INTEGER),path);
+    optional(shade, 'target_lantern_id', v=>lampIds.has(v),path);
   }
   for (const key of ['drifters','charms']) {
     optional(scenario,key,Array.isArray,'scenario');
@@ -95,13 +98,14 @@ function validateScenario(scenario, tuning, night) {
       }
     }
   }
-  const lampIds = new Set(Array.from({ length: MAPS[night].lanterns.length }, (_, i) => 'L' + (i + 1)));
   for (const [i, lamp] of (scenario.lanterns ?? []).entries()) {
     const path = 'scenario.lanterns[' + i + ']';
     requireField(object(lamp) && lampIds.delete(lamp.id), path + '.id');
     optional(lamp, 'pos', coordinates, path);
     optional(lamp, 'lit', boolean, path);
-    optional(lamp, 'deposited', natural(tuning.lantern_cost), path);
+    optional(lamp, 'ever_lit', boolean, path);
+    optional(lamp, 'fuel', v=>finite(v) && v>=0 && v<=tuning.fuel_max,path);
+    optional(lamp, 'deposited', natural(lamp.lit ? tuning.lantern_cost : lightCost(tuning,lamp)), path);
   }
   return scenario;
 }

@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { after, test } from 'node:test';
+import { createGame, IDLE, stepGame } from '../src/sim.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const { tuning: t } = JSON.parse(readFileSync(join(root, 'game.contract.json')));
@@ -90,7 +91,7 @@ test('interact allows partial deposit and uses a rising edge before lighting', (
   assert.deepEqual(events(run, 'deposit').map(e => [e.tick, e.data.amount, e.data.deposited]), [
     [1, t.lantern_cost - 1, t.lantern_cost - 1], [4, 1, t.lantern_cost],
   ]);
-  assert.deepEqual(events(run, 'lantern_lit').map(e => e.data), [{ lantern_id: 'L1' }]);
+  assert.deepEqual(events(run, 'lantern_lit').map(e => e.data), [{ lantern_id: 'L1', relight: false }]);
   assert.equal(snap(run, 4).score, t.score.per_lantern + t.lantern_cost * t.score.per_mote);
 });
 
@@ -113,7 +114,7 @@ test('pulse uses radius, pushes, applies stun for its full duration, and costs l
   assert.deepEqual(snap(run, t.pulse_push_ticks).shades[0].pos, [t.pulse_radius + t.pulse_push_m, t.pulse_center_y, 0]);
   assert.equal(snap(run, 1).shades[1].state, 'chase');
   assert.equal(snap(run, stun).shades[0].state, 'stunned');
-  assert.equal(snap(run, stun + 1).shades[0].state, 'chase');
+  assert.equal(snap(run, stun + 1).shades[0].state, 'wander');
 });
 
 test('pulse cooldown rejects early press and holding does not retrigger', () => {
@@ -157,15 +158,14 @@ test('lit safe radius excludes chasing shades and prevents contact damage at the
   assert.equal(events(run, 'player_hit').length, 0);
 });
 
-test('last lantern wins, bonuses are added once, and execution stops immediately', () => {
-  const run = play({ ticks: 10, scenario: { ...empty, time_left_s: 25,
-    player: { carried: t.lantern_cost }, lanterns: [
-      { id: 'L1', pos: [0, 0, 0] }, ...[2, 3, 4, 5].map(i => ({ id: 'L' + i, lit: true })),
-    ],
-  }, frames: [{ tick: 0, interact: true }] });
-  assert.deepEqual(events(run, 'game_over').map(e => e.data), [{ result: 'won', reason: 'all_lit' }]);
-  assert.deepEqual(run.at(-1), { type: 'end', ticks: 1, state: 'won',
-    score: t.score.per_lantern + t.lantern_cost * t.score.per_mote + 24 * t.score.per_second_left + t.flames * t.score.per_flame_left });
+test('all lanterns lit does not win early and dawn awards the new bonus once', () => {
+  const run=play({ticks:80,scenario:{...empty,time_left_s:1,player:{carried:10},
+    lanterns:[{id:'L1',pos:[0,0,0]},...[2,3,4,5].map(i=>({id:'L'+i,lit:true}))]},
+    frames:[{tick:0,interact:true}]});
+  assert.ok(snap(run,1).lanterns.every(l=>l.lit));
+  assert.equal(snap(run,1).state,'playing');
+  assert.deepEqual(events(run,'game_over').map(e=>[e.tick,e.data.reason]),[[60,'dawn_survived']]);
+  assert.deepEqual(run.at(-1),{type:'end',ticks:60,state:'won',score:1045});
 });
 
 test('lose reasons distinguish no flames from dawn', () => {
@@ -187,6 +187,9 @@ test('scenario setup replaces lists, preserves untouched lamps and emits no even
   assert.equal(run[0].motes_active, 0);
   assert.deepEqual(run[0].shades.map(s => s.id), ['S1', 'S2']);
   assert.equal(run[0].player.carried, 3);
+  assert.equal(run[0].player.capacity,10);
+  assert.equal(run[0].lanterns[1].fuel,100);
+  assert.equal(run[0].lanterns[1].ever_lit,true);
   assert.equal(run[0].lanterns.length, 5);
   assert.deepEqual([run[0].lanterns[1].lit, run[0].lanterns[1].deposited], [true, 2]);
 });
@@ -209,6 +212,8 @@ test('CLI uses exit 2 for malformed files and non-zero for command and filesyste
     { brokenScenario: '{' }, { brokenInputs: 'null' }, { scenario: { lanterns: [{ id: 'L6' }] } },
     { frames: [{ tick: 3 }, { tick: 3 }] }, { frames: [{ tick: 3 }, { tick: 2 }] },
     { frames: [{ tick: 0, move: [0, 2] }] }, { frames: [{ tick: 0, pulse: 'yes' }] },
+    { scenario: { lanterns:[{id:'L1',fuel:100.1}] } }, { scenario: { player:{successful_lights:-1} } },
+    { scenario: { shades:[{pos:[0,0,0],state:'drain',target_lantern_id:'L6'}] } },
   ]) {
     const result = invoke(options);
     assert.equal(result.status, 2, result.stderr);
@@ -392,23 +397,170 @@ test('height is checked for pickups and touch; win on the last tick only if aliv
   assert.equal(events(play({scenario:noFlames}),'game_over')[0].data.reason,'no_flames');
 });
 
-test('full 21600-tick Night 3 settles well within 30s and is byte-identical',()=>{
+test('full 18000-tick Night 3 settles well within 30s and is byte-identical',()=>{
   const start=performance.now();
-  const options={night:3,ticks:21600,every:10};
+  const options={night:3,ticks:18000,every:10};
   const first=invoke(options);
   const elapsed=performance.now()-start;
   assert.equal(first.status,0,first.stderr);
-  assert.equal(first.records.at(-1).ticks,21600);
+  assert.equal(first.records.at(-1).ticks,18000);
   assert.ok(elapsed<30000,'elapsed '+elapsed+' ms');
   const second=invoke(options);
   assert.equal(second.status,0,second.stderr);
   assert.equal(Buffer.compare(first.bytes,second.bytes),0);
 });
 
-test('the default Đảo Bến route can still win without scenario overrides',()=>{
-  const {frames}=JSON.parse(readFileSync(join(root,'docs/proof/phase-2/default-win.inputs.json')));
-  const run=invoke({seed:1201,frames,ticks:18000,every:600});
-  assert.equal(run.status,0,run.stderr);
-  assert.equal(events(run.records,'lantern_lit').length,t.lantern_count_night1);
-  assert.deepEqual(run.records.at(-1),{type:'end',ticks:13562,state:'won',score:1331});
+test('fuel decay is integer-exact, then extinguishes and clears deposited on the exact tick', () => {
+  const exact=createGame(t,1,{...empty,lanterns:[{id:'L1',lit:true,fuel:2}]});
+  const initial=exact.lanterns[0].fuelUnits;
+  for (let i=0;i<60;i++) stepGame(exact);
+  assert.equal(initial-exact.lanterns[0].fuelUnits,60);
+  const run=play({ticks:92,scenario:{...empty,lanterns:[{id:'L1',lit:true,fuel:1.5,deposited:9}]}});
+  assert.equal(snap(run,60).lanterns[0].fuel,.5);
+  assert.equal(snap(run,89).lanterns[0].lit,true);
+  assert.deepEqual(events(run,'lantern_out').map(e=>[e.tick,e.data]),[[90,{lantern_id:'L1'}]]);
+  assert.deepEqual(snap(run,90).lanterns[0],{
+    id:'L1',pos:[0,0,25],deposited:0,lit:false,ever_lit:true,relit_count:0,fuel:0,
+  });
+});
+
+test('refuel uses the ceiling, limits use by carried and caps fuel at 100', () => {
+  const frames=[{tick:0,interact:true}];
+  const run=(fuel,carried)=>play({scenario:{...empty,player:{carried},lanterns:[
+    {id:'L1',pos:[0,0,0],lit:true,fuel},
+  ]},frames});
+  const capped=run(89.9,8);
+  assert.deepEqual(events(capped,'refuel')[0].data,{lantern_id:'L1',amount:2,fuel:100});
+  assert.equal(snap(capped,1).player.carried,6);
+  assert.equal(snap(capped,1).score,10);
+  const limited=run(61,2);
+  assert.deepEqual(events(limited,'refuel')[0].data,{lantern_id:'L1',amount:2,fuel:81});
+  assert.equal(snap(limited,1).player.carried,0);
+  const formerlyFull=run(100,1);
+  assert.deepEqual(events(formerlyFull,'refuel')[0].data,{lantern_id:'L1',amount:1,fuel:100});
+});
+
+test('a truly full lantern at interaction emits nothing and allows a farther eligible lantern', () => {
+  // Normal fuel decay precedes interaction. Freeze only decay in this focused step-5 test.
+  const noDecay={...t,fuel_decay_per_s:0};
+  const scenario={...empty,player:{carried:2},lanterns:[{id:'L1',lit:true,pos:[0,0,0]}]};
+  const full=createGame(noDecay,1,scenario);
+  const input={...IDLE,interact:true};
+  const records=stepGame(full,input);
+  assert.equal(events(records,'refuel').length,0);
+  assert.equal(events(records,'deposit').length,0);
+  assert.equal(full.score,0);
+  assert.equal(full.player.carried,2);
+  const eligible=createGame(noDecay,1,{
+    ...scenario,lanterns:[...scenario.lanterns,{id:'L2',pos:[2,0,0]}],
+  });
+  assert.equal(events(stepGame(eligible,input),'deposit')[0].data.lantern_id,'L2');
+});
+
+test('interaction selects the nearest acceptable lantern, with smaller id breaking a tie', () => {
+  const scenario={...empty,player:{carried:1},lanterns:[
+    {id:'L2',pos:[-1,0,0],lit:true,fuel:60},{id:'L1',pos:[1,0,0]},
+  ]};
+  const frames=[{tick:0,interact:true}];
+  assert.equal(events(play({scenario,frames}),'deposit')[0].data.lantern_id,'L1');
+  scenario.lanterns[0].pos[0]=-.9;
+  assert.equal(events(play({scenario,frames}),'refuel')[0].data.lantern_id,'L2');
+});
+
+test('relight costs five rather than ten, counts as growth, and never grows above twenty', () => {
+  const scenario={...empty,player:{successful_lights:4,carried:10},lanterns:[
+    {id:'L1',ever_lit:true,pos:[0,0,0]}, {id:'L2',pos:[5,0,0]}, {id:'L3',lit:true},
+  ],motes:Array.from({length:5},()=>[4.1,0,0])};
+  const run=play({ticks:46,scenario,frames:[{tick:0,interact:true},{tick:1,interact:false,move:[1,0]},
+    {tick:45,interact:true}]});
+  assert.equal(snap(run,0).player.capacity,18);
+  assert.equal(snap(run,1).player.capacity,20);
+  assert.equal(snap(run,1).lanterns[0].relit_count,1);
+  assert.equal(snap(run,1).score,65);
+  assert.deepEqual(events(run,'lantern_lit').map(e=>e.data),[
+    {lantern_id:'L1',relight:true},{lantern_id:'L2',relight:false},
+  ]);
+  assert.equal(snap(run,46).player.capacity,20);
+  assert.equal(snap(run,46).score,215);
+  const fresh=play({night:2,ticks:0,scenario:{...empty,lanterns:[{id:'L1',lit:true}]}});
+  assert.equal(snap(fresh,0).player.capacity,10);
+});
+
+test('fuel at exactly thirty protects the area but a one-unit subsequent loss opens it', () => {
+  const run=play({ticks:2,scenario:{...empty,lanterns:[
+    {id:'L1',pos:[0,0,0],lit:true,fuel:30+1/60},
+  ],shades:[{pos:[0,1,0]}]}});
+  assert.equal(snap(run,1).lanterns[0].fuel,30);
+  assert.equal(events(run,'player_hit')[0].tick,2);
+});
+
+test('wander targets the nearest weak lamp over a nearer unlit one and starts draining at two metres', () => {
+  const run=play({ticks:3,scenario:{...empty,shades:[{pos:[19,1,5]}],lanterns:[
+    {id:'L1',pos:[21,0,5],lit:true,fuel:29},{id:'L2',pos:[17,0,5],lit:true,fuel:29},
+    {id:'L3',pos:[19,0,5.5]},
+  ]}});
+  assert.equal(snap(run,1).shades[0].state,'drain');
+  assert.ok(snap(run,1).shades[0].pos[0]>19);
+  assert.ok(snap(run,2).lanterns[0].fuel<snap(run,2).lanterns[1].fuel);
+});
+
+test('multiple drains stack immediately, log once per shade per 60 active ticks, and pause freezes them', () => {
+  const run=play({ticks:125,scenario:{...empty,shades:[19,21].map(x=>({
+    pos:[x,1,0],state:'drain',target_lantern_id:'L1',
+  })),lanterns:[{id:'L1',pos:[20,0,0],lit:true,fuel:29}]},
+  frames:[{tick:30,pause:true},{tick:31,pause:false},{tick:35,pause:true}]});
+  assert.equal(snap(run,31).lanterns[0].fuel,snap(run,35).lanterns[0].fuel);
+  assert.deepEqual(events(run,'fuel_drain').map(e=>[e.tick,e.data]),[
+    [65,{lantern_id:'L1',shade_id:'S1',fuel:18}],[65,{lantern_id:'L1',shade_id:'S2',fuel:18}],
+    [125,{lantern_id:'L1',shade_id:'S1',fuel:7}],[125,{lantern_id:'L1',shade_id:'S2',fuel:7}],
+  ]);
+});
+
+test('drain exits to chase at six, stunned on pulse, and wander on empty or out of range', () => {
+  const scenario={...empty,lanterns:[{id:'L1',pos:[20,0,0],lit:true,fuel:20}],
+    shades:[{pos:[20,.8,0],state:'drain',target_lantern_id:'L1'}]};
+  const chase=play({scenario:{...scenario,player:{pos:[14,0,0]}}});
+  assert.equal(snap(chase,1).shades[0].state,'chase');
+  const pulsed=play({ticks:121,scenario:{...scenario,player:{pos:[16,0,0],carried:3},
+    shades:[...scenario.shades,{pos:[16,.8,1],state:'wander'}]},frames:[{tick:0,pulse:true}]});
+  assert.equal(snap(pulsed,1).shades[0].state,'stunned');
+  assert.equal(snap(pulsed,1).score,20);
+  assert.equal(snap(pulsed,121).shades[0].state,'wander');
+  const emptyLamp=play({scenario:{...scenario,lanterns:[{...scenario.lanterns[0],fuel:1/60}]}});
+  assert.equal(events(emptyLamp,'lantern_out').length,1);
+  assert.equal(snap(emptyLamp,1).shades[0].state,'wander');
+  const outOfRange=play({scenario:{...scenario,shades:[{...scenario.shades[0],pos:[22.01,.8,0]}]}});
+  assert.equal(snap(outOfRange,1).shades[0].state,'wander');
+});
+
+test('refuel restores a safe zone, ends drain and ejects without damage in at most thirty ticks', () => {
+  const run=play({ticks:31,scenario:{...empty,player:{carried:1},lanterns:[
+    {id:'L1',pos:[0,0,0],lit:true,fuel:25},
+  ],shades:[{pos:[0,.8,0],state:'drain',target_lantern_id:'L1'}]},
+  frames:[{tick:0,interact:true}]});
+  assert.equal(snap(run,1).shades[0].state,'wander');
+  assert.equal(events(run,'player_hit').length,0);
+  const dist=tick=>Math.hypot(snap(run,tick).shades[0].pos[0],snap(run,tick).shades[0].pos[2]);
+  assert.ok(dist(29)<6);
+  assert.ok(dist(30)>=6);
+});
+
+test('dawn uses thresholds 3/5, 4/6, 5/7, extinguishes before counting and puts no_flames first', () => {
+  for(const [night,minimum] of [[1,3],[2,4],[3,5]]) {
+    const lanterns=Array.from({length:minimum},(_,i)=>({id:'L'+(i+1),lit:true,fuel:20}));
+    const scenario={...empty,time_left_s:1/60,lanterns};
+    const win=play({night,scenario});
+    assert.equal(events(win,'game_over')[0].data.reason,'dawn_survived');
+    assert.equal(win.at(-1).score,minimum*(50+19)+150);
+    const lost=play({night,scenario:{...scenario,lanterns:lanterns.slice(1)}});
+    assert.equal(events(lost,'game_over')[0].data.reason,'dawn');
+    assert.equal(lost.at(-1).score,0);
+    lanterns.at(-1).fuel=1/60;
+    const wentOut=play({night,scenario});
+    assert.equal(events(wentOut,'lantern_out')[0].tick,1);
+    assert.equal(events(wentOut,'game_over')[0].data.reason,'dawn');
+    lanterns.at(-1).fuel=20;
+    const noFlames=play({night,scenario:{...scenario,player:{flames:1},shades:[{pos:[0,1,0]}]}});
+    assert.equal(events(noFlames,'game_over')[0].data.reason,'no_flames');
+  }
 });

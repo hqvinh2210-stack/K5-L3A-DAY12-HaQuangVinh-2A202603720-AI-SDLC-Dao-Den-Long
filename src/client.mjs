@@ -1,11 +1,11 @@
-import { createGame, IDLE, nearestUnlit, stepGame, timeLeft, TICKS_PER_SECOND } from './sim.mjs';
+import { createGame, fuelOf, IDLE, lightCost, nearestUsableLantern, requiredLights, stepGame, timeLeft, TICKS_PER_SECOND } from './sim.mjs';
 import { createRenderer } from './render.mjs';
 import { createAudio } from './audio.mjs';
 
 const $=id=>document.getElementById(id);
 const text=(id,value)=>{ const el=$(id); if (el.textContent!==value) el.textContent=value; };
 const chapters=[
-  ['Đảo Bến','Mây à, hãy nhặt đom đóm theo những lối cát. Khi đèn sáng, ánh vàng sẽ che chở cháu khỏi Bóng Mực.'],
+  ['Đảo Bến','Mây à, hãy giữ ít nhất ba đèn sáng tới bình minh. Châm dầu trước khi đèn yếu để Bóng Mực không vào được vùng sáng.'],
   ['Đảo Cau','Qua cầu tre hoặc bước lên bệ nhảy để sang đảo bên. Gió Lạc thích ánh sáng, còn Bùa Gió sẽ giúp cháu Lướt liên tiếp.'],
   ['Đảo Chuông','Theo hai dốc cát lên tầng giữa, rồi dùng bệ nhảy lên tháp chuông. Khi lá bay, hãy coi chừng gió mạnh bên mép đảo.'],
 ];
@@ -16,10 +16,14 @@ const actions=new Map([['Space','jump'],['KeyE','interact'],['KeyF','pulse'],['S
 const control=new Set([...actions.keys(),'KeyW','KeyA','KeyS','KeyD','KeyQ','KeyR',
   'ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Escape','KeyP']);
 const audio=createAudio();
+const nameInput=$('player-name');
+const cleanName=value=>value.trim().normalize('NFC').slice(0,24);
+let playerName='';
+try { nameInput.value=cleanName(localStorage.getItem('dao-den-long-player') ?? ''); } catch { /* Storage can be disabled. */ }
 const map=$('map').getContext('2d');
 const scoreFormat=new Intl.NumberFormat('vi-VN');
 const STEP=1000/TICKS_PER_SECOND;
-const defaults={volume:60,sensitivity:100};
+const defaults={volume:60,sensitivity:100,colorblind:false};
 const seed=1201;
 let tuning, render, game, preview;
 let screen='menu', settingsReturn='menu', night=1, total=0;
@@ -29,7 +33,8 @@ let lastSecond=Infinity, warned=false, perfStart, perfFrames=0;
 let preferences={...defaults};
 try {
   const saved=JSON.parse(localStorage.getItem('dao-den-long-settings') ?? '{}');
-  for (const key in defaults) if (Number.isFinite(saved?.[key])) preferences[key]=saved[key];
+  for (const key of ['volume','sensitivity']) if (Number.isFinite(saved?.[key])) preferences[key]=saved[key];
+  preferences.colorblind=saved?.colorblind===true;
 } catch { /* Storage can be disabled. */ }
 
 function display(next) {
@@ -67,6 +72,7 @@ function begin() {
   warned=false;
   text('map-name',chapters[night-1][0]);
   display('playing');
+  audio.music(true,night);
   updateHud(performance.now());
   drawMap();
 }
@@ -84,10 +90,13 @@ function endGame() {
   if (win) total+=game.score;
   const complete=win && night===3;
   text('result-night','ĐÊM '+night+' · '+chapters[night-1][0]);
-  text('outcome',complete ? 'Bình Minh' : win ? 'Đảo đã sáng đèn!' : 'Đêm chưa tan');
-  text('summary',complete ? 'Cả ba hòn đảo đã rực sáng. Bình minh lên trên biển mây.' :
-    win ? 'Mây đã thắp lại tất cả Đèn Lồng Lớn trên '+chapters[night-1][0]+'.' :
-    resultReason==='dawn' ? 'Bình minh đến khi trên đảo vẫn còn đèn chưa thắp.' : 'Mây đã mất hết Ngọn Lửa.');
+  text('outcome',complete ? 'Bình Minh' : win ? 'Vượt qua đêm tối!' : 'Đêm chưa tan');
+  const lit=game.lanterns.filter(l=>l.lit).length;
+  const dawnProgress=lit+'/'+game.lanterns.length+' đèn còn sáng khi bình minh đến.';
+  text('summary',complete ? 'Mây đã giữ sáng cả ba hòn đảo đến bình minh.' :
+    win ? dawnProgress : resultReason==='dawn' ? dawnProgress+' Cần ít nhất '+requiredLights(game)+' đèn.' :
+    'Mây đã mất hết Ngọn Lửa.');
+  text('result-player','Người chơi · '+playerName);
   text('final-score',(complete ? 'Tổng điểm · ' : 'Điểm đêm này · ')+scoreFormat.format(complete ? total : game.score));
   text('result-action',complete ? 'Về menu chính' : win ? 'Sang đêm tiếp theo' : 'Thử lại đêm này');
   display('result');
@@ -155,19 +164,24 @@ function updateHud(now) {
   }
   const g=game.sim_tick;
   const seconds=Math.ceil(timeLeft(game));
-  text('clock',Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0'));
+  text('clock',(preferences.colorblind && seconds<=30 ? '⚠ ' : '')+
+    Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0'));
   $('clock').classList.toggle('danger',seconds<=30);
-  text('lanterns',game.lanterns.filter(l=>l.lit).length+' / '+game.lanterns.length);
+  text('lanterns',game.lanterns.filter(l=>l.lit).length+' / '+game.lanterns.length+' · cần '+requiredLights(game));
   text('score',scoreFormat.format(game.score));
-  text('inventory-label','Đom đóm · '+p.carried+' / '+tuning.carry_capacity);
-  [...$('mote-bar').children].forEach((cell,i)=>cell.classList.toggle('filled',i<p.carried));
+  text('inventory-label','Đom đóm · '+p.carried+' / '+p.capacity);
+  [...$('mote-bar').children].forEach((cell,i)=>{
+    cell.hidden=i>=p.capacity;
+    cell.classList.toggle('filled',i<p.carried);
+  });
   const cd=(end)=>end>g ? ((end-g)/60).toFixed(1).replace('.',',')+' s' : 'Sẵn sàng';
   text('dash-cd','⬗ Lướt · '+cd(g<p.charmUntil ? g : p.dashReadyAt));
   text('pulse-cd','✦ Tỏa Sáng · '+cd(p.pulseReadyAt));
   if (now-lastMap>70) { drawMap(); lastMap=now; }
-  const lamp=nearestUnlit(game);
+  const lamp=nearestUsableLantern(game);
   const message=p.respawnAt ? 'Mây đang trở về điểm xuất phát…' : lamp ?
-    'E — Nạp ánh sáng ('+lamp.deposited+'/'+tuning.lantern_cost+')' :
+    lamp.lit ? 'E — Châm dầu ('+Math.floor(fuelOf(lamp))+'/'+tuning.fuel_max+')' :
+      'E — '+(lamp.ever_lit ? 'Thắp lại' : 'Nạp ánh sáng')+' ('+lamp.deposited+'/'+lightCost(tuning,lamp)+')' :
     game.windWarn ? 'Gió mạnh sắp tới. Hãy tránh mép đảo!' :
     feedback && now<feedback.until ? feedback.message :
     g<p.charmUntil ? 'Bùa Gió · Lướt không chờ hồi chiêu' : 'Tìm đom đóm và theo ánh đèn trên bản đồ.';
@@ -191,6 +205,8 @@ function controls() {
 
 const notifications={
   lantern_lit:'Đèn đã sáng. Mây có thể trú trong vùng ánh vàng.',
+  refuel:'Đã châm dầu cho đèn.',
+  lantern_out:'Một đèn đã cạn dầu. Cần 5 đom đóm để thắp lại.',
   player_hit:'Mây đã mất một Ngọn Lửa.',
   charm_picked:'Mây nhận được Bùa Gió!',
   drifter_steal:'Gió Lạc đã lấy đom đóm!',
@@ -240,6 +256,8 @@ function animate(now) {
   render(live ? game : preview,{
     intro:!live, yaw:live ? yaw : 2.82+Math.sin(now*.00015)*.14,
     heading:live ? heading : 2, focus:live ? focus : [0,0,11], pulse, walking,
+    playerLabel:live ? playerName : '',
+    colorblind:preferences.colorblind,
   },now);
   if (screen==='playing') {
     perfStart??=now;
@@ -260,6 +278,19 @@ function settings(from) {
   display('settings');
 }
 
+function saveSettings() {
+  try { localStorage.setItem('dao-den-long-settings',JSON.stringify(preferences)); } catch { /* Storage can be disabled. */ }
+}
+
+const palette=$('colorblind');
+palette.checked=preferences.colorblind;
+document.body.classList.toggle('colorblind',palette.checked);
+palette.addEventListener('change',()=>{
+  preferences.colorblind=palette.checked;
+  document.body.classList.toggle('colorblind',palette.checked);
+  saveSettings();
+});
+
 for (const id of ['volume','sensitivity']) {
   const input=$(id);
   input.value=String(preferences[id]);
@@ -271,11 +302,43 @@ for (const id of ['volume','sensitivity']) {
   sync();
   input.addEventListener('input',()=>{
     sync();
-    try { localStorage.setItem('dao-den-long-settings',JSON.stringify(preferences)); } catch { /* Private mode. */ }
+    saveSettings();
   });
 }
 function pauseToggle() { logicalPause=true; }
-$('start').onclick=()=>{ audio.unlock(); total=0; intro(1); };
+$('start').onclick=()=>{
+  const name=cleanName(nameInput.value);
+  nameInput.value=name;
+  playerName=name || 'Mây';
+  try { localStorage.setItem('dao-den-long-player',name); } catch { /* Storage can be disabled. */ }
+  audio.unlock();
+  total=0;
+  intro(1);
+};
+nameInput.addEventListener('keydown',event=>{
+  if(event.key!=='Enter' || event.isComposing) return;
+  event.preventDefault();
+  $('start').click();
+});
+const soundtrack=$('soundtrack');
+const resetTrack=$('reset-soundtrack');
+soundtrack.addEventListener('change',()=>{
+  const file=soundtrack.files[0];
+  if(!file) return;
+  audio.track(file,()=>{
+    soundtrack.value='';
+    resetTrack.hidden=true;
+    text('soundtrack-status','Không phát được tệp này. Đã chuyển về nhạc mặc định.');
+  });
+  resetTrack.hidden=false;
+  text('soundtrack-status',file.name+' · Phát khi vào đêm');
+});
+resetTrack.onclick=()=>{
+  audio.track(null);
+  soundtrack.value='';
+  resetTrack.hidden=true;
+  text('soundtrack-status','Đang dùng nhạc của trò chơi.');
+};
 $('enter-night').onclick=begin;
 $('resume').onclick=pauseToggle;
 $('retry').onclick=begin;
@@ -308,8 +371,9 @@ try {
   if (!response.ok) throw new Error('Cannot read game contract');
   ({tuning}=await response.json());
   const template=createGame(tuning,seed);
-  preview={...template,player:{...template.player,pos:[4,0,28]},lanterns:template.lanterns.map((l,i)=>({...l,lit:i===0}))};
-  $('mote-bar').replaceChildren(...Array.from({length:tuning.carry_capacity},()=>document.createElement('i')));
+  preview={...template,player:{...template.player,pos:[4,0,28]},
+    lanterns:template.lanterns.map((l,i)=>i===0 ? {...l,lit:true,fuelUnits:tuning.fuel_max*TICKS_PER_SECOND} : l)};
+  $('mote-bar').replaceChildren(...Array.from({length:tuning.capacity_max},()=>document.createElement('i')));
   render=createRenderer($('world'),$('effects'),template);
   $('start').disabled=false;
   requestAnimationFrame(animate);

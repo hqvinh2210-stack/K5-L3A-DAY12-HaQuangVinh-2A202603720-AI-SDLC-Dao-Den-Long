@@ -1,9 +1,9 @@
 ---
 name: lantern-contract
-description: Kiểm chứng thay đổi cơ chế, bản đồ hoặc bản nộp của Đảo Đèn Lồng theo Test Contract và bằng chứng Phase 2.
+description: Kiểm chứng cơ chế, bản đồ và bản nộp Đảo Đèn Lồng theo Test Contract v1.2, đặc biệt là dầu, vùng trú và kết quả bình minh.
 ---
 
-- Đối chiếu `game.contract.json`, `src/maps.mjs` và thứ tự xử lý trong `src/sim.mjs`. Kiểm tra cả mốc trước và sau mỗi biên tick khi thay đổi hồi chiêu, sinh vật phẩm, tạm dừng hoặc hồi sinh.
-- Với thay đổi hành vi, thêm ca vào `tests/contract.test.mjs` qua CLI và chạy `npm test`. Dùng cùng seed, kịch bản và đầu vào ở hai tiến trình riêng để đối chiếu từng byte.
-- Với thay đổi hình ảnh hoặc HUD, mở bản `npm start` ở độ phân giải mục tiêu. Khi kiểm tra hiệu năng, ghi cỡ khung mà trình duyệt báo, cửa sổ lấy mẫu và FPS từ vòng vẽ. Nếu dùng kịch bản dựng sẵn để thử giao diện, ghi rõ trong bằng chứng.
-- Lưu lệnh và kết quả thực đo theo [chỉ mục bằng chứng](../../../docs/proof/README.md), rồi đối chiếu [tiêu chí Phase 2](../../../docs/phase-2.md).
+- Đọc [ADR dầu và bình minh](../../../docs/adr/003-den-can-dau.md) rồi đối chiếu `game.contract.json` với thứ tự trong `src/sim.mjs`.
+- Ưu tiên kịch bản sát biên tick: trừ dầu trước khi di chuyển, châm dầu trước khi tính vùng trú, hết Ngọn Lửa trước xét điểm bình minh. Kiểm tra mức dầu bằng đơn vị 1/60 ở lõi vì dầu trên snapshot chỉ có một chữ số thập phân.
+- Chạy `npm test`. Chạy lại cùng seed, kịch bản và đầu vào ở hai tiến trình CLI, so theo byte và đo một đêm đủ 18.000 tick. Ghi lý do khi sửa hoặc bỏ ca của hợp đồng cũ.
+- Nếu có thay đổi đồ họa hoặc HUD, kiểm tra bản `npm start` và ghi rõ các thao tác thực hiện. Phân biệt kịch bản dựng sẵn và lượt chơi mặc định. Lưu bằng chứng ở [chỉ mục](../../../docs/proof/README.md).

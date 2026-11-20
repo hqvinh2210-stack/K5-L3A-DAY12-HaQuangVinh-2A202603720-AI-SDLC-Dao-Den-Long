@@ -27,7 +27,10 @@
   <main class="intro" id="intro">
     <p class="eyebrow">BA HÒN ĐẢO</p>
     <h1>Đảo Đèn<br><em>Lồng</em></h1>
-    <p class="story">Sương đen đã nuốt mất ánh sáng. Cùng Mây tìm đom đóm và thắp lại những Đèn Lồng Lớn trước khi trời sáng.</p>
+    <p class="story">Sương đen phủ ba hòn đảo. Cùng Mây tìm đom đóm, châm dầu và giữ Đèn Lồng Lớn sáng tới bình minh.</p>
+    <label class="player-name">Tên người chơi
+      <input id="player-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Nhập tên của bạn">
+    </label>
     <div class="actions">
       <button class="action" id="start" disabled>Bắt đầu chơi</button>
       <button class="secondary" id="menu-settings">Cài đặt</button>
@@ -89,6 +92,14 @@
       <label class="setting">Độ nhạy chuột <output id="sensitivity-value"></output>
         <input id="sensitivity" type="range" min="25" max="200" aria-label="Độ nhạy chuột">
       </label>
+      <label class="accessibility-setting">
+        <input id="colorblind" type="checkbox"> Bảng màu dễ phân biệt
+      </label>
+      <label class="setting soundtrack">Nhạc nền
+        <input id="soundtrack" type="file" accept="audio/*,.mp3,.m4a,.ogg,.wav,.flac">
+      </label>
+      <p id="soundtrack-status" class="soundtrack-status" role="status">Đang dùng nhạc của trò chơi.</p>
+      <button class="secondary" id="reset-soundtrack" hidden>Dùng nhạc mặc định</button>
       <button class="action" id="close-settings">Quay lại</button>
     </div>
   </section>
@@ -97,6 +108,7 @@
       <p class="eyebrow" id="result-night"></p>
       <h2 id="outcome"></h2>
       <p id="summary"></p>
+      <p id="result-player" class="result-player"></p>
       <p id="final-score" class="final-score"></p>
       <div class="actions">
         <button class="action" id="result-action"></button>

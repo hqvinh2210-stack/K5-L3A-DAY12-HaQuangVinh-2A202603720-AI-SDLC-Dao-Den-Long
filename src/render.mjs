@@ -1,4 +1,5 @@
 import { terrain } from './maps.mjs';
+import { fuelOf, TICKS_PER_SECOND } from './sim.mjs';
 
 const TAU = Math.PI * 2;
 const mix = (a, b, t) => a + (b - a) * t;
@@ -246,21 +247,29 @@ function islandMesh(game) {
   return new Float32Array(mesh);
 }
 
-function drawLamp(mesh, lamp) {
+function drawLamp(mesh, lamp, dimmed) {
   const [x, y, z] = lamp.pos;
   column(mesh, x, z, y + 0.03, 0.23, 1.54, 1.54, 10, colors.ruin);
   column(mesh, x, z, y + 0.26, 0.31, 1.16, 0.82, 8, colors.rock);
   column(mesh, x, z, y + 0.55, 2.11, 0.3, 0.18, 8, colors.wood);
   column(mesh, x, z, y + 2.51, 0.25, 0.64, 0.79, 8, colors.bark);
-  column(mesh, x, z, y + 2.76, 0.25, 0.62, 0.86, 8, lamp.lit ? colors.amber : colors.unlit, 0, lamp.lit ? 0.8 : 0);
-  column(mesh, x, z, y + 3.01, 0.82, 0.86, 0.77, 8, lamp.lit ? colors.silk : colors.unlit, 0, lamp.lit ? 1 : 0);
+  const paperEdge=lamp.lit ? tint(colors.amber,dimmed ? .45 : 1) : colors.unlit;
+  const paper=lamp.lit ? tint(colors.silk,dimmed ? .48 : 1) : colors.unlit;
+  column(mesh, x, z, y + 2.76, 0.25, 0.62, 0.86, 8, paperEdge, 0, lamp.lit ? 0.8 : 0);
+  column(mesh, x, z, y + 3.01, 0.82, 0.86, 0.77, 8, paper, 0, lamp.lit ? 1 : 0);
   column(mesh, x, z, y + 3.77, 0.21, 1.04, 0.98, 8, colors.wood);
   column(mesh, x, z, y + 3.98, 0.58, 0.98, 0.23, 8, colors.pine);
   column(mesh, x, z, y + 4.55, 0.22, 0.19, 0, 8, colors.cream);
   for (let i = 0; i < 8; i++) {
     const [bx, , bz] = polar(x, z, 0.84, i / 8 * TAU, y);
     column(mesh, bx, bz, y + 2.93, 0.87, 0.044, 0.036, 4, colors.wood);
+    if (!lamp.lit) {
+      const a=i*TAU/8;
+      triangle(mesh,polar(x,z,.87,a+.07,y+3.34),polar(x,z,.87,a+.65,y+3.32),
+        polar(x,z,.88,a+.35,y+(i%2 ? 2.96 : 3.09)),colors.ink);
+    }
   }
+  if (!lamp.lit) for (let i=1;i<mesh.length;i+=7) mesh[i]=y+.8*(mesh[i]-y);
 }
 
 function drawMay(mesh, game, yaw, time) {
@@ -290,18 +299,34 @@ function drawMay(mesh, game, yaw, time) {
   return [lx, y + 1.08, lz];
 }
 
-function drawShade(mesh, shade, time, index) {
+function drawShade(mesh, shade, time, index, cam, colorblind) {
   const [x, y, z] = shade.pos;
   const wobble = Math.sin(time * 3.1 + index);
   const stunned = shade.state === 'stunned';
   const middle = y + wobble * 0.18;
+  const outline=colorblind ? rgb('00b3ff') : colors.violet;
+  const radius=.62+.06*wobble;
+  const halfHeight=stunned ? .47 : .88;
+  const sidePoint=(a,offset)=>[
+    x+Math.cos(a)*(radius+offset)*cam.right[0],
+    middle+.22+Math.sin(a)*(halfHeight+offset),
+    z+Math.cos(a)*(radius+offset)*cam.right[2],
+  ];
+  for (let i=0;i<12;i++) {
+    const a=i*TAU/12,b=(i+1)*TAU/12;
+    quad(mesh,sidePoint(a,.006),sidePoint(b,.006),sidePoint(b,.042),sidePoint(a,.042),outline,1);
+  }
   orb(mesh, x, middle + 0.22, z, 0.62 + 0.06 * wobble, stunned ? 0.47 : 0.88, 0.59,
-    stunned ? colors.stunned : colors.ink);
+    stunned ? colors.stunned : colors.ink,0.9);
   for (let i = 0; i < 5; i++) {
     const [tx, , tz] = polar(x, z, 0.48, i * TAU / 5 + time * 0.7, 0);
-    orb(mesh, tx, middle - 0.4 + Math.sin(i + time * 4) * 0.165, tz, 0.22, 0.42, 0.22, colors.ink, 0, 5);
+    orb(mesh, tx, middle - 0.4 + Math.sin(i + time * 4) * 0.165, tz, 0.22, 0.42, 0.22, colors.ink, 0.9, 5);
   }
-  orb(mesh, x, middle + 0.49, z, 0.20, 0.22, 0.22, stunned ? colors.stunned : colors.violet, 0.82);
+  const facing=unit([cam.eye[0]-x,0,cam.eye[2]-z]);
+  for (const side of [-1,1]) {
+    orb(mesh,x+.54*facing[0]+side*.18*cam.right[0],middle+.5,z+.54*facing[2]+side*.18*cam.right[2],
+      .1,.12,.1,outline,1,6);
+  }
 }
 
 function cameraFor(yaw, focus, aspect, intro) {
@@ -387,18 +412,21 @@ export function createRenderer(canvas, effects, template) {
       gl.uniform3fv(uniforms[key], value);
     }
     gl.uniform2fv(uniforms.Scale, cam.scale);
+    const dark=lamp=>fuelOf(lamp)<game.tuning.low_fuel_threshold &&
+      game.sim_tick%TICKS_PER_SECOND>=TICKS_PER_SECOND/2;
     const lights=Array.from({length:7},(_,i)=>{
       const l=game.lanterns[i];
-      return l ? [l.pos[0],Number(l.lit),l.pos[2]] : [0,0,0];
+      return l ? [l.pos[0],l.lit ? (dark(l) ? .3 : 1) : 0,l.pos[2]] : [0,0,0];
     }).flat();
     gl.uniform3fv(uniforms['Lamps[0]'],lights);
     gl.uniform1f(uniforms.Warmth,.15+.55*game.lanterns.filter(l=>l.lit).length/game.lanterns.length);
     const mesh=[];
     for (const l of game.lanterns) {
-      const key=game.night+':'+l.id+':'+l.lit;
+      const dimmed=l.lit && dark(l);
+      const key=game.night+':'+l.id+':'+l.lit+':'+dimmed;
       if (!lampMeshes.has(key)) {
         const vertices=[];
-        drawLamp(vertices,l);
+        drawLamp(vertices,l,dimmed);
         lampMeshes.set(key,vertices);
       }
       mesh.push(...lampMeshes.get(key));
@@ -417,7 +445,7 @@ export function createRenderer(canvas, effects, template) {
     const mayLight = drawMay(mesh, { ...game, walking: view.walking }, view.heading, time);
     gl.uniform3fv(uniforms.May, mayLight);
 
-    for (let i = 0; i < game.shades.length; i++) drawShade(mesh, game.shades[i], time, i);
+    for (let i=0;i<game.shades.length;i++) drawShade(mesh,game.shades[i],time,i,cam,view.colorblind);
     const motes = game.motes.map((mote, i) => [
       mote.pos[0] + Math.sin(time * 2 + i) * 0.17,
       mote.pos[1] + 0.62 + Math.sin(time * 2.8 + i * 2.3) * 0.22,
@@ -464,12 +492,23 @@ export function createRenderer(canvas, effects, template) {
     for (const lamp of game.lanterns) {
       if (!lamp.lit) continue;
       const [x, y, z] = lamp.pos;
-      halo([x, y + 3.4, z], 3.1, '255,170,78', 0.57);
+      const dimmed=dark(lamp);
+      halo([x,y+3.4,z],3.1,'255,170,78',dimmed ? .19 : .57);
+      const gauge=project([x,y+5.05,z]);
+      if (gauge) {
+        const [sx,sy,depth]=gauge;
+        const barWidth=clamp(height*1.8/depth,21*ratio,55*ratio);
+        const barHeight=5*ratio;
+        ctx.fillStyle='#111426ee';
+        ctx.fillRect(sx-barWidth/2-ratio,sy-ratio,barWidth+2*ratio,barHeight+2*ratio);
+        ctx.fillStyle=dimmed ? '#8a7956' : '#ffe9b0';
+        ctx.fillRect(sx-barWidth/2,sy,barWidth*fuelOf(lamp)/game.tuning.fuel_max,barHeight);
+      }
       // Cosmetic orbit, drawn only by the graphical renderer.
       for (let i = 0; i < 8; i++) {
         const angle = time * 0.8 + i / 8 * TAU;
         const point = polar(x, z, 1.6 + 0.13 * i, angle, y + 2.2 + 0.45 * i + Math.sin(angle) * 0.25);
-        halo(point, 0.23, '255,220,144', 0.72);
+        halo(point, 0.23, '255,220,144', dimmed ? .30 : .72);
       }
     }
     const leaves=game.wind.active || game.windWarn;
@@ -499,6 +538,27 @@ export function createRenderer(canvas, effects, template) {
           ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,10);ctx.lineTo(0,6);ctx.lineTo(-9,10);ctx.closePath();ctx.fill();
           ctx.restore();
         }
+      }
+    }
+    if (view.playerLabel && !game.player.respawnAt) {
+      const [x,y,z]=game.player.pos;
+      const point=project([x,y+2.48,z]);
+      if (point) {
+        const [sx,sy]=point;
+        ctx.save();
+        ctx.font='650 '+Math.round(14*ratio)+'px system-ui, sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        const padding=9*ratio;
+        const labelWidth=ctx.measureText(view.playerLabel).width+2*padding;
+        const labelHeight=24*ratio;
+        ctx.fillStyle='#0e142ae8';
+        ctx.beginPath();
+        ctx.roundRect(sx-labelWidth/2,sy-labelHeight/2,labelWidth,labelHeight,5*ratio);
+        ctx.fill();
+        ctx.fillStyle='#f5f1e6';
+        ctx.fillText(view.playerLabel,sx,sy);
+        ctx.restore();
       }
     }
     if (view.pulse && now - view.pulse.at < 580) {

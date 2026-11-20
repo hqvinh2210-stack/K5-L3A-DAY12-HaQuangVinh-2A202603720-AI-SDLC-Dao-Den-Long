@@ -12,6 +12,19 @@ export function createAudio() {
   let volume=.6;
   let songTick=0;
   let next=0;
+  let track;
+  let trackURL;
+  let trackActive=false;
+
+  function clearTrack() {
+    if (!track) return;
+    track.pause();
+    track.removeAttribute('src');
+    URL.revokeObjectURL(trackURL);
+    track=undefined;
+    trackURL=undefined;
+    trackActive=false;
+  }
 
   function tone(frequency, at, duration, strength, wave='sine') {
     const oscillator=ctx.createOscillator();
@@ -40,11 +53,42 @@ export function createAudio() {
         try { await ctx.resume(); } catch { /* Browser rejected playback. */ }
       }
     },
+    track(file, onError) {
+      clearTrack();
+      if (!file) return;
+      const element=new Audio();
+      track=element;
+      trackURL=URL.createObjectURL(file);
+      element.loop=true;
+      element.preload='metadata';
+      element.volume=volume;
+      element.addEventListener('error',()=>{
+        if (track!==element) return;
+        clearTrack();
+        onError();
+      },{once:true});
+      element.src=trackURL;
+    },
     volume(value) {
       volume=value;
+      if (track) track.volume=value;
       if (ctx) master.gain.setTargetAtTime(value,ctx.currentTime,.025);
     },
     music(playing, night) {
+      if (track) {
+        if (!playing && trackActive) {
+          trackActive=false;
+          track.pause();
+        } else if (playing && !trackActive) {
+          const current=track;
+          trackActive=true;
+          current.play().catch(error=>{
+            if (track!==current || error.name==='AbortError' || !trackActive) return;
+            current.dispatchEvent(new Event('error'));
+          });
+        }
+        return;
+      }
       if (ctx?.state!=='running' || !playing) return;
       const now=ctx.currentTime;
       if (now<next) return;

@@ -1,0 +1,50 @@
+
+> dao-den-long@1.0.0 test
+> node --test
+
+✔ fixed ticks, starting state, partial frames and yaw mapping (356.5946ms)
+✔ diagonal movement is normalized and holding jump cannot repeat it (345.5761ms)
+✔ pickup radius includes boundary, capacity is enforced, and pickups award no score (324.756ms)
+✔ interact allows partial deposit and uses a rising edge before lighting (321.6559ms)
+✔ interact ignores a lamp just beyond its radius (368.8437ms)
+✔ pulse uses radius, pushes, applies stun for its full duration, and costs light (420.7106ms)
+✔ pulse cooldown rejects early press and holding does not retrigger (756.7812ms)
+✔ shade contact consumes a flame, drops floor of the ratio and respects invulnerability (338.0791ms)
+✔ lit safe radius excludes chasing shades and prevents contact damage at the boundary (365.9559ms)
+✔ all lanterns lit does not win early and dawn awards the new bonus once (355.4748ms)
+✔ lose reasons distinguish no flames from dawn (688.2696ms)
+✔ scenario setup replaces lists, preserves untouched lamps and emits no events or score (353.6911ms)
+✔ random game logs are byte-identical across independent CLI runs (1317.3495ms)
+✔ CLI uses exit 2 for malformed files and non-zero for command and filesystem errors (4175.4827ms)
+✔ dash lasts 12 ticks, holds air altitude, uses facing, and cools down from activation (736.7314ms)
+✔ Night 2 pads launch fixed velocity against input and land on the other island (739.2931ms)
+✔ Night 3 pad lands on tier 2, sheer walls block, ramps climb and the tower stops movement (1857.128ms)
+✔ Gió Lạc idles, chases, steals through invulnerability and flees once (419.0406ms)
+✔ Tỏa Sáng drives a chasing Gió Lạc away and recovers loot from a fleeing one (405.9903ms)
+✔ Bùa Gió refreshes for 600 ticks, grants 7.2 m/s and repeat dash, then respawns at 2700 (954.4785ms)
+✔ Night 3 wind starts at 1800, adds 2 m/s, ends at 2100 and can be switched off (1133.7491ms)
+✔ pause arbitration freezes sim_tick, clock, dash and movement until the resume edge (317.725ms)
+✔ fall is charged once through invulnerability, waits 60 ticks and resets velocity; fatal fall ends (708.0166ms)
+✔ a lamp newly lit ejects a resident shade for 30 ticks without damage (343.4526ms)
+✔ night_start and per-night spawn ticks and caps use the selected map (10752.7738ms)
+✔ height is checked for pickups and touch; win on the last tick only if alive (1027.4625ms)
+✔ full 18000-tick Night 3 settles well within 30s and is byte-identical (5441.8082ms)
+✔ fuel decay is integer-exact, then extinguishes and clears deposited on the exact tick (350.7856ms)
+✔ refuel uses the ceiling, limits use by carried and caps fuel at 100 (1027.1545ms)
+✔ a truly full lantern at interaction emits nothing and allows a farther eligible lantern (3.822ms)
+✔ interaction selects the nearest acceptable lantern, with smaller id breaking a tie (652.0405ms)
+✔ relight costs five rather than ten, counts as growth, and never grows above twenty (658.8032ms)
+✔ fuel at exactly thirty protects the area but a one-unit subsequent loss opens it (340.4895ms)
+✔ wander targets the nearest weak lamp over a nearer unlit one and starts draining at two metres (365.869ms)
+✔ multiple drains stack immediately, log once per shade per 60 active ticks, and pause freezes them (434.755ms)
+✔ drain exits to chase at six, stunned on pulse, and wander on empty or out of range (1456.3621ms)
+✔ refuel restores a safe zone, ends drain and ejects without damage in at most thirty ticks (515.2713ms)
+✔ dawn uses thresholds 3/5, 4/6, 5/7, extinguishes before counting and puts no_flames first (4095.8878ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 46144.3593
