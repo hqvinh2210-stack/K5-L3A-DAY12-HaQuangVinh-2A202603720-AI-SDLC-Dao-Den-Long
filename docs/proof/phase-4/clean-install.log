@@ -1,0 +1,37 @@
+Nền tảng: Windows, Node v24.16.0
+git clone --no-hardlinks <LAB12> <ban-clone>
+Cloning into '<ban-clone>'...
+done.
+HEAD 961ad32
+npm ci
+
+up to date, audited 1 package in 6s
+
+found 0 vulnerabilities
+exit=0
+
+npm start (PORT=4187)
+> node src/serve.mjs
+Đảo Đèn Lồng · http://127.0.0.1:4187/
+200 http://127.0.0.1:4187/
+200 http://127.0.0.1:4187/game.contract.json
+200 http://127.0.0.1:4187/src/client.mjs
+200 http://127.0.0.1:4187/src/render.mjs
+200 http://127.0.0.1:4187/src/leaderboard-ui.mjs
+200 http://127.0.0.1:4187/api/leaderboard
+
+npm run build:release
+tar -czf dist/dao-den-long-v1.0.0.tar.gz -C dist dao-den-long-v1.0.0
+tar -xzf dist/dao-den-long-v1.0.0.tar.gz -C <thu-muc-moi>
+node src/serve.mjs (từ gói giải nén, PORT=4188)
+Đảo Đèn Lồng · http://127.0.0.1:4188/
+SHA256 dao-den-long-v1.0.0.tar.gz 995BC9BA37C9548026E5DD9D1573DB8C1773E807BD0BB92E4A19366886CB2F14
+200 http://127.0.0.1:4188/
+200 http://127.0.0.1:4188/game.contract.json
+200 http://127.0.0.1:4188/src/client.mjs
+200 http://127.0.0.1:4188/src/render.mjs
+200 http://127.0.0.1:4188/src/leaderboard-ui.mjs
+200 http://127.0.0.1:4188/api/leaderboard
+
+Trình duyệt ở bản clone: mở menu, vào Đêm 1, thấy thông báo 2 Bóng Mực xuất hiện kèm 2 mũi tên.
+Trình duyệt ở gói giải nén: mở menu, vào Đêm 1, HUD 0 / 5 · cần 3, nhấn Esc mở Tạm dừng.
