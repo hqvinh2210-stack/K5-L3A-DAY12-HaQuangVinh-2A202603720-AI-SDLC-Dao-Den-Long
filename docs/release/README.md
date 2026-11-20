@@ -2,7 +2,7 @@
 
 ## Việc người nộp thực hiện
 
-1. Thay `mssv-ho-ten` trong `game.contract.json` bằng MSSV và họ tên. Điền số token, chi phí ở [retro](../notes/retro-phase-4.md); kiểm tra lại rồi commit và push. Nếu commit thông tin sau tag Phase 4, tạo tag phiên bản trên commit đã duyệt.
+1. Xác nhận MSSV và họ tên trong trường `team` của `game.contract.json`. Đối chiếu số token đã ghi và bổ sung chi phí từ báo cáo thanh toán vào [retro](../notes/retro-phase-4.md). Nếu commit thông tin sau tag Phase 4, tạo tag phiên bản trên commit đã duyệt.
 2. Đo lại bằng máy chấm: `node src/bench.mjs --seed 42 --duration 30 --out bench-grading.json`. Ghi kết quả thật, kiểm tra ≥60 FPS trung bình, 1% thấp ≥30 FPS và tải ≤10.000 ms.
 3. Quay `demo.mp4` dưới 5 phút theo [kịch bản quay](../demo/phase-4-shot-list.md). Kiểm tra tựa, tiếng Việt và log hiển thị trước khi tải lên.
 4. Kiểm tra trên GitHub rằng `main` và `phase-4` ở repo công khai. Nếu cần đẩy từ một checkout chưa có remote, chạy `git push <URL-repo> main phase-4`. Không đẩy lại bằng force.

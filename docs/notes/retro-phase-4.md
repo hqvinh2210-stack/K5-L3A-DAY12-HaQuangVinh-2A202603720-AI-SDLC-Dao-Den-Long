@@ -21,7 +21,7 @@ AI đã chọn cách trình bày tiêu đề có phông gây tách dấu trong P
 
 Thiết lập cảnh stress và ca hiệu năng ngay ở Phase 1. Dùng một kịch bản trình duyệt có thể bật bằng công cụ QA từ đầu, đồng thời kiểm tra phát lại headless sau mỗi lần thay hợp đồng. Tách sớm phần lưu điểm và cài đặt khỏi mô phỏng. Giữ các kết quả của phase cũ ở đúng tag để phân biệt lỗi hồi quy với luật được thay có chủ đích.
 
-Tiết kiệm token bằng cách giữ lại mô phỏng, dùng test nhỏ nhắm đúng biên, lưu log thay vì chép lại toàn bộ đầu ra, và tạo nội dung hình ảnh bằng hình học có sẵn. Repo không lưu số sử dụng thật của từng phiên.
+Tiết kiệm token bằng cách giữ lại mô phỏng, dùng test nhỏ nhắm đúng biên, lưu log thay vì chép lại toàn bộ đầu ra, và tạo nội dung hình ảnh bằng hình học có sẵn. Số liệu dưới đây lấy từ nhật ký sử dụng cục bộ của phiên Codex khi hoàn tất đóng gói Phase 4.
 
-- **Tổng token AI ước tính:** [CHỦ DỰ ÁN ĐIỀN TỪ SỐ LIỆU THỰC]
-- **Chi phí AI ước tính:** [CHỦ DỰ ÁN ĐIỀN, GHI RÕ ĐƠN VỊ TIỀN]
+- **Tổng token AI ghi nhận:** 49.715.823, gồm 49.549.320 token đầu vào và 166.503 token đầu ra. Trong đầu vào có 49.151.488 token đọc từ bộ nhớ đệm. Đây là số cộng dồn của phiên làm việc, bao gồm các lượt kiểm tra và chỉnh sửa xen giữa các phase, tính đến 16:56 ngày 20/11/2026 (UTC+07:00).
+- **Chi phí AI:** Chưa xác định. Nhật ký phiên không có số tiền đã tính; cần bổ sung từ hóa đơn hoặc báo cáo thanh toán.

@@ -1,6 +1,6 @@
 {
   "contract_version": "1.3",
-  "team": "mssv-ho-ten",
+  "team": "2A202603720-ha-quang-vinh",
   "build_cmd": "npm ci",
   "run_cmd": "node src/serve.mjs",
   "headless_cmd": "node src/headless.mjs",

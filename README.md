@@ -50,7 +50,7 @@ node src/bench.mjs --seed 42 --duration 30 --out bench.json
 node --expose-gc src/soak.mjs --seed 7 --nights 10 --out soak.json
 ```
 
-- CLI headless hỗ trợ `--scenario`, `--inputs`, `--snapshot-every` và đêm 1–3. [Test Contract v1.3](game.contract.json) giữ mô hình 60 tick/giây. Thay trường `team` đang là `mssv-ho-ten` bằng MSSV và họ tên. `score.per_second_left` là `null` vì không có thưởng thời gian.
+- CLI headless hỗ trợ `--scenario`, `--inputs`, `--snapshot-every` và đêm 1–3. [Test Contract v1.3](game.contract.json) giữ mô hình 60 tick/giây. Trường `team` ghi MSSV và họ tên theo mẫu `mssv-ho-ten`. `score.per_second_left` là `null` vì không có thưởng thời gian.
 - Benchmark cần Chrome, Chromium hoặc Edge và desktop đồ họa. Dùng `LANTERN_BROWSER` nếu trình duyệt ở đường dẫn khác. Launcher đặt khung nội dung 1280×720 và mặc định tắt giới hạn khung hình/vsync bằng cờ Chromium. Đặt `LANTERN_VSYNC=on` để chạy đối chiếu có vsync. Giá trị p95 dùng phương pháp **nearest-rank**. `peak_mem_mb` là `null` vì web không có RSS của tổng các tiến trình trình duyệt. [Mã cờ Chromium](https://chromium.googlesource.com/chromium/src/%2B/HEAD/components/viz/common/switches.cc)
 - Soak dùng RSS, tính theo MiB dù trường hợp đồng mang hậu tố `_mb`. Cùng quy trình GC ở hai mốc giúp so sánh sau thu gom. Xem [số đo, log kiểm thử và cài đặt sạch](docs/proof/phase-4/README.md).
 
