@@ -29,6 +29,8 @@ Mở [Đảo Đèn Lồng](http://127.0.0.1:4173/). Trên PowerShell nếu `npm.
 
 ## Trợ năng và bảng điểm
 
+Ở menu chính, **Chọn đêm** cho phép vào thẳng một đảo để luyện tập, hoặc giữ **Hành trình ba đêm** để ghi điểm xếp hạng. Khi Bóng Mực chạm Mây và làm mất lửa, cảnh hiển thị hạt va chạm và nhãn **−1 Ngọn Lửa**. Giảm chuyển động giữ nhãn tĩnh.
+
 Chọn **Cài đặt → Đổi phím điều khiển** để gán từng hướng di chuyển, nhảy, Lướt, nạp, Tỏa Sáng và tạm dừng. Các phím bị trùng được báo ngay. **Khôi phục mặc định** đặt lại các phím. Cài đặt gồm **Bảng màu dễ phân biệt**, **Giảm chuyển động** và **Chữ lớn (125%)**, đổi cỡ chữ giao diện từ 18 lên 22,5 px. Giảm chuyển động bỏ các hiệu ứng chuyển động và nháy không cần thiết, giữ nguyên các chú thích về gió, Bóng Mực mới xuất hiện, 10 giây cuối và dầu thấp.
 
 Sau khi thua hoặc hoàn thành cả ba đêm, nhập tên xếp hạng từ 3–12 ký tự. Chấp nhận chữ cái Unicode (gồm tiếng Việt có dấu), chữ số ASCII và dấu gạch dưới. Điểm xếp hạng chỉ cộng từ các đêm đã thắng. Khi bằng điểm, lượt đạt sớm hơn đứng trước. Xem 10 điểm cao nhất từ menu chính.

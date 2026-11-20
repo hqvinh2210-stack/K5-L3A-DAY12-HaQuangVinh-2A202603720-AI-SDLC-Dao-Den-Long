@@ -234,3 +234,12 @@ body.large-text { --ui-font: 22.5px; }
   .intro { left: 16px; top: 48%; max-height: calc(100dvh - 138px); }
   .binding-list { grid-template-columns: minmax(0,1fr); }
 }
+.player-name select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #84704f;
+  border-radius: 6px;
+  background: #141b30;
+  color: #f5f1e6;
+  font: inherit;
+}

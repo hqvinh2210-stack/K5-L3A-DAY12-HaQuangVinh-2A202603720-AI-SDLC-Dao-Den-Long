@@ -31,6 +31,16 @@
     <label class="player-name">Tên người chơi
       <input id="player-name" type="text" maxlength="24" autocomplete="nickname" placeholder="Nhập tên của bạn">
     </label>
+    <label class="player-name">Chọn đêm
+      <select id="night-select">
+        <option value="0">Hành trình ba đêm</option>
+        <optgroup label="Luyện tập">
+          <option value="1">Đêm 1 · Đảo Bến</option>
+          <option value="2">Đêm 2 · Đảo Cau</option>
+          <option value="3">Đêm 3 · Đảo Chuông</option>
+        </optgroup>
+      </select>
+    </label>
     <div class="actions">
       <button class="action" id="start" disabled>Bắt đầu chơi</button>
       <button class="secondary" id="open-leaderboard">Bảng xếp hạng</button>

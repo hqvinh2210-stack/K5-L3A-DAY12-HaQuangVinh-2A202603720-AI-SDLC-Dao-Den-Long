@@ -27,6 +27,7 @@ const STEP=1000/TICKS_PER_SECOND;
 const seed=1201;
 let tuning, render, game, preview;
 let screen='menu', settingsReturn='menu', night=1, total=0, nightsWon=0;
+let practice=false, impact;
 let yaw=0, heading=0, focus=[0,0,0], logicalPause=false, dragging=false;
 let lastFrame, accumulated=0, pulse, feedback, resultReason, lastMap=0;
 let lastSecond=Infinity, warned=false, perfStart, perfFrames=0, spawnNotices=[], captureBinding;
@@ -65,6 +66,7 @@ function begin() {
   keys.clear();
   queued.clear();
   pulse=feedback=resultReason=undefined;
+  impact=undefined;
   spawnNotices=[];
   logicalPause=false;
   accumulated=lastMap=0;
@@ -89,7 +91,7 @@ function home() {
 function endGame() {
   const win=game.state==='won';
   if (win) { total+=game.score; nightsWon++; }
-  const complete=win && night===3;
+  const complete=win && night===3 && !practice;
   text('result-night','ĐÊM '+night+' · '+chapters[night-1][0]);
   text('outcome',complete ? 'Bình Minh' : win ? 'Vượt qua đêm tối!' : 'Đêm chưa tan');
   const lit=game.lanterns.filter(l=>l.lit).length;
@@ -99,8 +101,9 @@ function endGame() {
     'Mây đã mất hết Ngọn Lửa.');
   text('result-player','Người chơi · '+playerName);
   text('final-score',(complete ? 'Tổng điểm · ' : 'Điểm đêm này · ')+scoreFormat.format(complete ? total : game.score));
-  text('result-action',complete ? 'Về menu chính' : win ? 'Sang đêm tiếp theo' : 'Thử lại đêm này');
-  scores.offer(complete || !win ? {score:total,nights_won:nightsWon,seed} : null,playerName);
+  text('result-action',practice ? 'Chơi lại đêm này' :
+    complete ? 'Về menu chính' : win ? 'Sang đêm tiếp theo' : 'Thử lại đêm này');
+  scores.offer(!practice && (complete || !win) ? {score:total,nights_won:nightsWon,seed} : null,playerName);
   display('result');
 }
 
@@ -232,6 +235,7 @@ function consume(input,now) {
     if (notifications[e.name]) feedback={until:now+1700,message:notifications[e.name]};
     if (e.name==='shade_spawned') spawnNotices.push({id:e.data.id,until:game.sim_tick+5*TICKS_PER_SECOND});
     if (e.name==='pulse') pulse={at:now,pos:[...game.player.pos]};
+    if (e.name==='player_hit' && e.data.by==='shade') impact={tick:game.sim_tick,pos:[...game.player.pos]};
     if (e.name==='paused') { keys.clear(); display('pause'); }
     if (e.name==='resumed') display('playing');
     if (e.name==='game_over') {
@@ -272,6 +276,7 @@ function animate(now) {
     playerLabel:live ? playerName : '',
     colorblind:preferences.colorblind,
     reducedMotion:preferences.reducedMotion,
+    impact:live && impact ? {...impact,age:game.sim_tick-impact.tick} : undefined,
     largeText:preferences.largeText,
     spawnPositions:live ? spawnNotices.flatMap(({id})=>{
       const shade=game.shades.find(item=>item.id===id);
@@ -383,7 +388,9 @@ $('start').onclick=()=>{
   audio.unlock();
   total=0;
   nightsWon=0;
-  intro(1);
+  const chosenNight=Number($('night-select').value);
+  practice=chosenNight!==0;
+  intro(chosenNight || 1);
 };
 nameInput.addEventListener('keydown',event=>{
   if(event.key!=='Enter' || event.isComposing) return;
@@ -414,7 +421,7 @@ $('resume').onclick=pauseToggle;
 $('retry').onclick=begin;
 $('pause-home').onclick=home;
 $('result-home').onclick=home;
-$('result-action').onclick=()=>game.state==='lost' ? begin() : night<3 ? intro(night+1) : home();
+$('result-action').onclick=()=>practice || game.state==='lost' ? begin() : night<3 ? intro(night+1) : home();
 $('menu-settings').onclick=()=>settings('menu');
 $('pause-settings').onclick=()=>settings('pause');
 $('close-settings').onclick=()=>display(settingsReturn);

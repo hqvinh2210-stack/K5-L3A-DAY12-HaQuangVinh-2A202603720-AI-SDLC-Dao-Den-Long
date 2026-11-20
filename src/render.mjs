@@ -658,6 +658,35 @@ export function createRenderer(canvas, effects, template) {
         ctx.restore();
       }
     }
+    if (view.impact && view.impact.age<36) {
+      const progress=view.impact.age/36;
+      const [x,y,z]=view.impact.pos;
+      const motion=view.reducedMotion ? 0 : progress;
+      const marker=project([x,y+3.1+motion*.65,z]);
+      if (marker) {
+        ctx.save();
+        if (!view.reducedMotion) {
+          ctx.globalAlpha=1-progress;
+          ctx.fillStyle=view.colorblind ? '#ffffff' : '#ff997b';
+          // Ink flecks fan out in world space from the point of contact.
+          for (let i=0;i<12;i++) {
+            const angle=i*TAU/12;
+            const point=project(polar(x,z,.55+2.2*progress,angle,y+.65+Math.sin(progress*Math.PI)*.6));
+            if (!point) continue;
+            const size=(4-3*progress)*ratio;
+            ctx.fillRect(point[0]-size/2,point[1]-size/2,size,size);
+          }
+        }
+        ctx.font='700 '+Math.round((view.largeText ? 22.5 : 18)*ratio)+'px system-ui, sans-serif';
+        ctx.textAlign='center';
+        ctx.strokeStyle='#111426';
+        ctx.lineWidth=4*ratio;
+        ctx.fillStyle=view.colorblind ? '#ffffff' : '#ffad98';
+        ctx.strokeText('−1 Ngọn Lửa',marker[0],marker[1]);
+        ctx.fillText('−1 Ngọn Lửa',marker[0],marker[1]);
+        ctx.restore();
+      }
+    }
     if (!view.reducedMotion && view.pulse && now - view.pulse.at < 580) {
       const progress = clamp((now - view.pulse.at) / 580, 0, 1);
       const [x, , z] = view.pulse.pos;
