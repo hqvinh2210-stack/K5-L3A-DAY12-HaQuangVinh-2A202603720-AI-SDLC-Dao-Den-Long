@@ -1,0 +1,14 @@
+# TICKET-02 · Tiêu chí nghiệm thu
+
+Các thao tác kiểm tra trình duyệt và cách chạy bộ test được ghi trong [bằng chứng Phase 2](proof/phase-2/README.md). Tên các ca dưới đây có thể dùng với `node --test --test-name-pattern`.
+
+| Phần 3 | Tiêu chí chấp nhận | Kiểm chứng |
+| --- | --- | --- |
+| Gió Lạc | Dải lụa xám xanh. Xuất hiện ở Đảo Cau và Đảo Chuông mỗi 1.200 tick, tối đa 2. Bay chậm 2 m/s khi rảnh, đuổi ở 7 m/s khi Mây mang từ 5 đom đóm trong 15 m. Vào tầm 1,2 m thì lấy tối đa 3 con đúng một lần, kể cả khi Mây miễn nhiễm hay ở vùng an toàn. Bay đi 240 tick và mang theo đom đóm. Tỏa Sáng đuổi Gió Lạc đang săn, làm nó rơi đồ đã lấy nếu đang chạy và biến mất sau 120 tick. | Ca `Gió Lạc idles`, `Tỏa Sáng drives`, `night_start`. Hình thể ở `src/render.mjs`. |
+| Bùa Gió | Bùa đỏ viền vàng đúng vị trí. Dùng cùng điều kiện nhặt đom đóm. Tăng tốc lên 7,2 m/s, bỏ hồi chiêu Lướt trong 600 tick, làm mới hiệu lực khi nhặt tiếp. Lướt vẫn kéo dài 12 tick với 14 m/s và không nhận lệnh giữa lượt. Bùa trở lại sau 2.700 tick. | Ca `Bùa Gió refreshes`, `dash lasts`. Màu và lưới hình ở `src/render.mjs`. |
+| Luồng trò chơi | Menu dẫn vào màn giới thiệu có tên đảo và lời Ông Đăng. Thắng chuyển sang giới thiệu đêm kế. Thua có nút thử lại cùng đêm. Bình Minh hiển thị tổng điểm ba đêm đã thắng, mỗi đêm bắt đầu với 3 Ngọn Lửa. | Kiểm tra trình duyệt với kịch bản một đèn còn lại. Ca `lose reasons`, `night_start`. |
+| Tạm dừng | Esc và P mở hoặc đóng menu. Menu có Tiếp tục, Chơi lại Đêm, Cài đặt và Về menu. Đồng hồ và cơ chế đứng yên trong thời gian tạm dừng. | Ca `pause arbitration`. Kiểm tra menu bằng Esc/P trên bản chơi. |
+| Cài đặt | Hai thanh chỉnh âm lượng và độ nhạy chuột. Âm lượng điều chỉnh Web Audio, độ nhạy đổi tốc độ xoay khi kéo. Hai giá trị vẫn còn sau tải lại. | Trong menu Cài đặt đổi hai thanh, tải lại trang, mở Cài đặt và so sánh giá trị. |
+| Âm thanh | Có nhạc nền trong đêm và hiệu ứng nhặt, thắp đèn, Tỏa Sáng, trúng đòn, nhảy, Lướt, thắng, thua, Bóng Mực xuất hiện và 10 giây cuối. Lá bay và tiếng báo xuất hiện trước đợt gió. | Mở bản chơi bằng thao tác bấm, đặt âm lượng lớn hơn 0 và kích hoạt từng hành động. Đối chiếu các âm ở `src/audio.mjs` và cách gọi ở `src/client.mjs`. |
+| HUD | Ngọn Lửa ở trái, đồng hồ ở giữa và nháy đỏ từ 30 giây, số đèn và điểm bên phải. Túi 10 ô và hai chỉ báo hồi chiêu hiển thị. Đến gần đèn hiện đúng lời nhắc, đèn chưa sáng gần nhất ngoài màn hình có mũi tên. | Kiểm tra trực tiếp khung 1280×720, nhấn Shift/F, tiến đến đèn và xoay để đèn ra ngoài màn hình. |
+| Màu và ánh sáng | Dùng đúng màu vật liệu quy định cho trời, sương, cỏ, cát, gỗ, biển mây, đèn, đom đóm, Bóng Mực, Mây, Bùa Gió, Gió Lạc và HUD. Cường độ môi trường là `0.15 + 0.55 × số đèn sáng / tổng số đèn`. Nhân vật vẫn có nón lá và đèn treo. | Đối chiếu hằng màu ở `src/render.mjs`, `src/style.css` và uniform WebGL. Quan sát cảnh trước và sau khi thắp đèn trong bài thử trình duyệt. |

@@ -1,55 +1,47 @@
 # Đảo Đèn Lồng
 
-**Đêm 1 – Đảo Bến** là trò chơi 3D trên trình duyệt. Sương đen đã nuốt mất ánh sáng của đảo. Hãy giúp Mây nhặt đom đóm, thắp năm Đèn Lồng Lớn và tìm chỗ trú khi Bóng Mực đến gần.
+Ba hòn đảo nổi đã chìm trong sương. Cùng Mây tìm đom đóm và thắp lại Đèn Lồng Lớn trên **Đảo Bến**, **Đảo Cau** và **Đảo Chuông**.
 
-## Cài đặt và chơi
+## Chơi trên trình duyệt
 
-Cần Node.js 20 trở lên, npm và trình duyệt hỗ trợ WebGL. Trên macOS, Linux hoặc Windows, chạy từ thư mục dự án:
+Cần Node.js 20 trở lên, npm và trình duyệt có WebGL. Trên macOS, Linux hoặc Windows, chạy từ thư mục dự án:
 
 ```sh
 npm ci
 npm start
 ```
 
-Mở [trò chơi trên máy của bạn](http://127.0.0.1:4173/) và chọn **Bắt đầu chơi**.
-
-## Điều khiển
+Mở [trò chơi](http://127.0.0.1:4173/) và chọn **Bắt đầu chơi**. Nếu PowerShell chặn tệp `npm.ps1`, dùng `npm.cmd` thay cho `npm`.
 
 | Phím | Hành động |
 | --- | --- |
-| W, A, S, D hoặc phím mũi tên | Di chuyển theo góc nhìn |
-| Q / R | Xoay góc nhìn |
+| W, A, S, D hoặc phím mũi tên | Chạy theo góc nhìn |
+| Q / R hoặc kéo chuột trên cảnh | Xoay góc nhìn |
 | Phím cách | Nhảy |
-| E | Gửi đom đóm vào Đèn Lồng Lớn chưa sáng gần nhất |
-| F | Tỏa sáng để đẩy lùi và làm choáng Bóng Mực |
+| Shift | Lướt |
+| E | Nạp ánh sáng vào đèn chưa sáng gần nhất |
+| F | Tỏa Sáng |
+| Esc / P | Tạm dừng hoặc tiếp tục |
 
-Đi qua đốm vàng để tự nhặt đom đóm. Túi chứa tối đa 10 con. Mỗi đèn cần 5 con và có thể nhận qua nhiều lần gửi. Đèn đã thắp tạo vùng an toàn 4 m. Tỏa sáng tốn 2 con và hồi sau 2 giây. Mây thắng khi thắp đủ năm đèn, hoặc thua khi hết ngọn lửa hay bình minh đến trước khi thắp đủ đèn. Chọn **Chơi lại** sau khi kết thúc.
+Túi chứa 10 đom đóm. Mỗi đèn cần 10 con và giữ tiến độ giữa các lần nạp. Tỏa Sáng tốn 3 con. Một đèn sáng tạo vùng trú 6 m khỏi Bóng Mực. Gió Lạc có thể lấy đom đóm ngay trong vùng này. Bùa Gió giúp chạy nhanh và Lướt liên tiếp trong 10 giây. Nếu rơi khỏi đảo, Mây mất một Ngọn Lửa và toàn bộ đom đóm đang mang.
 
-## Tính điểm
+Thắp hết đèn để sang đêm kế tiếp. Ngọn Lửa được nạp đầy vào đầu mỗi đêm. Màn **Bình Minh** xuất hiện khi thắp đủ đèn Đảo Chuông. Âm lượng và độ nhạy chuột được lưu trong trình duyệt.
 
-| Hành động | Điểm |
-| --- | ---: |
-| Nhặt một đom đóm mới | 10 |
-| Thắp một Đèn Lồng Lớn | 100 |
-| Làm choáng một Bóng Mực | 20 |
-| Mỗi giây nguyên còn lại khi thắng | 2 |
-| Mỗi ngọn lửa còn lại khi thắng | 50 |
+## Điểm
 
-Khi bị chạm, Mây mất một ngọn lửa và làm rơi một nửa số đom đóm đang mang, làm tròn xuống.
+Mỗi đom đóm **đã nạp vào đèn** cộng 10 điểm, mỗi đèn sáng cộng 100 điểm và mỗi Bóng Mực trúng Tỏa Sáng cộng 5 điểm. Khi thắng một đêm, cộng thêm 2 điểm mỗi giây nguyên còn lại và 50 điểm mỗi Ngọn Lửa còn lại. Tổng điểm Bình Minh là tổng điểm của các đêm đã thắng.
 
-## Chế độ không giao diện
+## Test Contract v1.1
 
-[game.contract.json](game.contract.json) là nguồn thông số chung của trình duyệt và CLI. Thay giá trị `team` bằng MSSV và họ tên theo mẫu `mssv-ho-ten` trước khi nộp. `fall_enabled` là `false` vì mép đảo là ranh giới mềm, Mây không rơi. Không có thông số `null` trong Phase 1. Mọi bán kính tương tác đo trên mặt phẳng XZ, kể cả khi Mây đang nhảy.
+Thông số dùng chung nằm trong [game.contract.json](game.contract.json). Hãy thay `team: mssv-ho-ten` bằng MSSV và họ tên trước khi nộp. `fall_enabled` đang bật. Chế độ headless dùng cùng mô phỏng cố định 60 tick/giây với bản đồ họa.
 
 ```sh
 npm test
-node src/headless.mjs --seed 1201 --night 1 --ticks 18000 --out ket-qua.jsonl
+node src/headless.mjs --seed 1201 --night 3 --ticks 21600 --out ket-qua.jsonl
 ```
 
-Thêm `--scenario <tệp.json>` để đặt trạng thái ban đầu, `--inputs <tệp.json>` để phát lại thao tác và `--snapshot-every <số>` để đổi khoảng cách giữa các bản ghi trạng thái (mặc định 10 tick). Xem [bằng chứng Phase 1](docs/proof/phase-1/README.md) để phát lại một ván thắng trên bản đồ mặc định.
+`--night` nhận 1, 2 hoặc 3. Có thể thêm `--scenario <tệp.json>`, `--inputs <tệp.json>` và `--snapshot-every <số>`. Xem [bằng chứng Phase 2](docs/proof/phase-2/README.md), [tiêu chí nghiệm thu](docs/phase-2.md) và [giả định](docs/notes/phase-2-assumptions.md).
 
 ## Sáng tạo của tôi
 
-Đom đóm tạo một vòng xoắn nhỏ quanh Đèn Lồng Lớn vừa sáng. Hiệu ứng nằm trong bộ vẽ WebGL, còn [log kiểm thử](docs/proof/phase-1/contract-tests.log) ghi các ca kiểm tra hành vi gốc và so sánh đầu ra JSONL từng byte.
-
-[Ghi chú về giả định](docs/notes/assumptions.md) · [Nhật ký dùng AI](docs/notes/ai-log.md) · [Retrospective](docs/notes/retro.md)
+Giữ vòng xoắn đom đóm quanh đèn đã thắp từ Phase 1. Phase 2 thêm bè trầm và thay tông nhạc theo từng đảo. Hai hiệu ứng chạy trong WebGL và Web Audio. [Log kiểm thử](docs/proof/phase-2/contract-tests.log) bao gồm so sánh đầu ra headless theo byte.

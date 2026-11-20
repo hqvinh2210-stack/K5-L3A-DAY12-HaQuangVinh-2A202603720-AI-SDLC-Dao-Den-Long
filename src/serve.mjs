@@ -6,6 +6,8 @@ const files = new Map([
   ['/src/style.css', ['./style.css', 'text/css; charset=utf-8']],
   ['/src/client.mjs', ['./client.mjs', 'text/javascript; charset=utf-8']],
   ['/src/render.mjs', ['./render.mjs', 'text/javascript; charset=utf-8']],
+  ['/src/maps.mjs', ['./maps.mjs', 'text/javascript; charset=utf-8']],
+  ['/src/audio.mjs', ['./audio.mjs', 'text/javascript; charset=utf-8']],
   ['/src/sim.mjs', ['./sim.mjs', 'text/javascript; charset=utf-8']],
   ['/game.contract.json', ['../game.contract.json', 'application/json; charset=utf-8']],
 ]);

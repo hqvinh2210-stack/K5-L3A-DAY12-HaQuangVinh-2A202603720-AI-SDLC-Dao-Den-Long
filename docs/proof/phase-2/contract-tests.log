@@ -1,0 +1,40 @@
+
+> dao-den-long@1.0.0 test
+> node --test
+
+✔ fixed ticks, starting state, partial frames and yaw mapping (420.3531ms)
+✔ diagonal movement is normalized and holding jump cannot repeat it (468.7706ms)
+✔ pickup radius includes boundary, capacity is enforced, and pickups award no score (374.5948ms)
+✔ interact allows partial deposit and uses a rising edge before lighting (435.4866ms)
+✔ interact ignores a lamp just beyond its radius (402.1894ms)
+✔ pulse uses radius, pushes, applies stun for its full duration, and costs light (1217.5204ms)
+✔ pulse cooldown rejects early press and holding does not retrigger (1235.1936ms)
+✔ shade contact consumes a flame, drops floor of the ratio and respects invulnerability (483.1055ms)
+✔ lit safe radius excludes chasing shades and prevents contact damage at the boundary (550.6744ms)
+✔ last lantern wins, bonuses are added once, and execution stops immediately (657.2226ms)
+✔ lose reasons distinguish no flames from dawn (1357.216ms)
+✔ scenario setup replaces lists, preserves untouched lamps and emits no events or score (618.6966ms)
+✔ random game logs are byte-identical across independent CLI runs (3021.719ms)
+✔ CLI uses exit 2 for malformed files and non-zero for command and filesystem errors (4139.3949ms)
+✔ dash lasts 12 ticks, holds air altitude, uses facing, and cools down from activation (1061.6624ms)
+✔ Night 2 pads launch fixed velocity against input and land on the other island (1604.4727ms)
+✔ Night 3 pad lands on tier 2, sheer walls block, ramps climb and the tower stops movement (2588.9868ms)
+✔ Gió Lạc idles, chases, steals through invulnerability and flees once (383.2561ms)
+✔ Tỏa Sáng drives a chasing Gió Lạc away and recovers loot from a fleeing one (363.0116ms)
+✔ Bùa Gió refreshes for 600 ticks, grants 7.2 m/s and repeat dash, then respawns at 2700 (865.9012ms)
+✔ Night 3 wind starts at 1800, adds 2 m/s, ends at 2100 and can be switched off (1237.4629ms)
+✔ pause arbitration freezes sim_tick, clock, dash and movement until the resume edge (336.3993ms)
+✔ fall is charged once through invulnerability, waits 60 ticks and resets velocity; fatal fall ends (664.2245ms)
+✔ a lamp newly lit ejects a resident shade for 30 ticks without damage (359.0728ms)
+✔ night_start and per-night spawn ticks and caps use the selected map (15711.3297ms)
+✔ height is checked for pickups and touch; win on the last tick only if alive (2193.815ms)
+✔ full 21600-tick Night 3 settles well within 30s and is byte-identical (9470.4649ms)
+✔ the default Đảo Bến route can still win without scenario overrides (1782.9266ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 55451.7796

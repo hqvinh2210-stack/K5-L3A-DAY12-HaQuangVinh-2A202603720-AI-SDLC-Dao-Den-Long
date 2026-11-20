@@ -9,3 +9,7 @@
 ## Harness
 
 `AGENTS.md` chứa quy ước của repo. Các ca chạy qua CLI để giảm lệ thuộc vào nội bộ mô phỏng. Trình duyệt dùng chính mô phỏng đó và không đổi luật chơi khi thêm hiệu ứng. Repo không cần hook cài riêng.
+
+## Phase 2
+
+Codex đối chiếu số chuẩn, chuyển mô phỏng và CLI sang v1.1, viết ca kiểm thử mới rồi dựng tiếp giao diện WebGL. Các lệnh headless được chạy thật để lấy log, số tick và kết quả lặp. Kiểm tra giao diện dùng bản mặc định để đo FPS và một máy chủ QA tạm để xác minh màn chuyển đêm.

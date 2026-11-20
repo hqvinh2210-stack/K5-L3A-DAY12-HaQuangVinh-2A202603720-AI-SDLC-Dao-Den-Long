@@ -1,7 +1,7 @@
 # Hướng dẫn làm việc với LAB12
 
-- Giữ mô phỏng thuần định thời 60 tick/giây trong `src/sim.mjs`. WebGL chỉ đọc trạng thái, còn trình duyệt và CLI dùng chung thông số từ `game.contract.json`.
-- Dùng `npm test` sau khi sửa hành vi. Các ca hợp đồng chạy qua CLI thật và kiểm tra cả thứ tự sự kiện, mã thoát và tính lặp lại của JSONL.
-- Viết toàn bộ chữ người chơi thấy và README bằng tiếng Việt có dấu.
-- Lưu giả định, nhật ký AI và retrospective trong `docs/notes/`. Lưu đầu ra thật và cách chạy lại trong `docs/proof/`.
-- Cập nhật README khi thay đổi cách cài đặt, điều khiển, điểm hoặc thông số hợp đồng.
+- `game.contract.json` là nguồn thông số dùng chung. `src/maps.mjs` chứa hình học và điểm sinh chuẩn của ba đêm. Bản đồ họa đọc cùng dữ liệu với headless.
+- Xem thứ tự tick trong `src/sim.mjs` trước khi đổi hành vi. `tick` đếm cả thời gian tạm dừng, còn `sim_tick` đếm thời gian chơi. Kịch bản không sinh sự kiện ngay ở tick 0.
+- Chạy `npm test` sau mỗi thay đổi luật. Giữ các ca hồi quy Đảo Bến và kiểm tra CLI thực tế với kịch bản xác định.
+- Chỉ thêm nội dung mỹ thuật và nhạc vào client nếu tính năng nằm ngoài hợp đồng. Viết chữ người chơi thấy bằng tiếng Việt có dấu.
+- Dùng [skill lantern-contract](.claude/skills/lantern-contract/SKILL.md) để lập bằng chứng trước khi đánh dấu một phase. Ghi giả định và nhật ký AI vào `docs/notes/`.

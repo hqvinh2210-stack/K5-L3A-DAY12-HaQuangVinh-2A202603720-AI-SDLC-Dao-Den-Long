@@ -123,3 +123,41 @@ h2 { color: var(--gold); font-size: clamp(42px, 6vw, 64px); line-height: 1.05; }
   .eyebrow { margin: 6px 0; }
   .navigation { width: 115px; }
 }
+:root { background: #0e1430; color: #f5f1e6; --gold: #f2c14e; }
+body { background: radial-gradient(ellipse at 74% 63%, #12384a 0%, #0e1430 64%); }
+#effects { pointer-events: none; }
+body.playing #world { cursor: grab; }
+body.playing #world:active { cursor: grabbing; }
+.top { pointer-events: none; align-items: flex-start; }
+body.playing .identity { margin-left: 155px; }
+.stats { margin-left: auto; }
+.stats .stat:first-child { position: fixed; top: 24px; left: clamp(16px, 4vw, 62px); background: #10172bdc; border-radius: 4px; }
+.stats .clock { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); text-align: center; background: #10172bdc; border-radius: 4px; }
+#clock.danger { color: #ff5a5f; animation: clock-alert 1s steps(2,jump-none) infinite; }
+@keyframes clock-alert { 50% { opacity: .46; } }
+.actions, .menu-buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.secondary { background: #171e33; border: 1px solid #84704f; color: #f5f1e6; padding: 11px 15px; border-radius: 3px; font: 650 15px system-ui; cursor: pointer; }
+.secondary:hover, .secondary:focus-visible { background: #292942; border-color: #f2c14e; }
+.menu-buttons { margin-top: 20px; }
+.setting { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 18px 0; }
+.setting input { grid-column: 1 / -1; width: 100%; accent-color: #f2c14e; }
+.setting output, .end-card .speaker { color: #f2c14e; }
+.end-card .speaker { margin-bottom: -12px; font-weight: 700; }
+.inventory { position: fixed; bottom: 65px; left: 50%; transform: translateX(-50%); text-align: center; padding: 7px 13px 10px; background: #0e1429db; border: 1px solid var(--line); border-radius: 5px; }
+.inventory span { color: #f5f1e6; font-size: 13px; }
+.mote-bar { display: flex; gap: 4px; margin-top: 5px; }
+.mote-bar i { display: block; width: 17px; height: 9px; border-radius: 2px; background: #373649; }
+.mote-bar i.filled { background: #f2c14e; box-shadow: 0 0 6px #ffb34788; }
+.hint { bottom: 129px; }
+.navigation { bottom: 119px; }
+.cooldowns { position: fixed; bottom: 64px; right: clamp(16px,4vw,62px); display: grid; gap: 4px; }
+.cooldown { background: #0e1429ed; border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; color: #f2c14e; font: 650 12px system-ui; pointer-events: none; text-align: left; }
+@media (max-width: 770px) {
+  body.playing .identity { visibility: hidden; }
+  .stats .stat:first-child, .stats .clock { top: 14px; }
+  .stats { width: auto; position: fixed; right: 12px; top: 14px; }
+  .stats .clock { position: fixed; }
+  .inventory, .cooldowns { bottom: 82px; }
+  .navigation { bottom: 138px; }
+  .hint { bottom: 151px; max-width: calc(100vw - 153px); }
+}

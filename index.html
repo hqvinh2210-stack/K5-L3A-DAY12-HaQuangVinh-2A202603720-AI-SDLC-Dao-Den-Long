@@ -3,8 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101a25">
-  <meta name="description" content="Theo chân Mây đi tìm đom đóm và thắp sáng năm Đèn Lồng Lớn trên Đảo Bến.">
+  <meta name="theme-color" content="#0e1430">
   <title>Đảo Đèn Lồng</title>
   <link rel="stylesheet" href="/src/style.css">
 </head>
@@ -12,51 +11,97 @@
   <canvas id="world" aria-hidden="true"></canvas>
   <canvas id="effects" aria-hidden="true"></canvas>
   <div class="veil" aria-hidden="true"></div>
-
   <header class="top">
     <div class="identity">
       <span class="mark" aria-hidden="true"><i></i></span>
-      <div><strong>Đảo Đèn Lồng</strong><span>Đêm 1 · Đảo Bến</span></div>
+      <div><strong>Đảo Đèn Lồng</strong><span id="chapter">Ba hòn đảo</span></div>
     </div>
     <div id="stats" class="stats" hidden>
-      <div class="stat"><span>Ngọn lửa</span><strong id="flames" class="flames"></strong></div>
-      <div class="stat"><span>Đom đóm</span><strong id="carried"></strong></div>
+      <div class="stat"><span>Ngọn Lửa</span><strong id="flames" class="flames"></strong></div>
+      <div class="stat clock"><span>Tới bình minh</span><strong id="clock"></strong></div>
       <div class="stat"><span>Đèn đã thắp</span><strong id="lanterns"></strong></div>
-      <div class="stat"><span>Tới bình minh</span><strong id="clock"></strong></div>
       <div class="stat"><span>Điểm</span><strong id="score"></strong></div>
     </div>
   </header>
 
   <main class="intro" id="intro">
-    <p class="eyebrow">ĐÊM 1 <span></span> ĐẢO BẾN</p>
+    <p class="eyebrow">BA HÒN ĐẢO</p>
     <h1>Đảo Đèn<br><em>Lồng</em></h1>
-    <p class="story">Sương đen đã nuốt hết ánh sáng của đảo. Cùng Mây tìm đom đóm và thắp lại năm Đèn Lồng Lớn trước khi trời sáng.</p>
-    <button class="action" id="start" disabled>Bắt đầu chơi</button>
+    <p class="story">Sương đen đã nuốt mất ánh sáng. Cùng Mây tìm đom đóm và thắp lại những Đèn Lồng Lớn trước khi trời sáng.</p>
+    <div class="actions">
+      <button class="action" id="start" disabled>Bắt đầu chơi</button>
+      <button class="secondary" id="menu-settings">Cài đặt</button>
+    </div>
     <p class="error" id="error" role="alert" hidden></p>
   </main>
 
-  <aside class="navigation" id="navigation" hidden aria-label="Bản đồ Đảo Bến">
-    <div class="map-title"><span>Đảo Bến</span><span>BẢN ĐỒ</span></div>
+  <aside class="navigation" id="navigation" hidden aria-label="Bản đồ">
+    <div class="map-title"><span id="map-name"></span><span>BẢN ĐỒ</span></div>
     <canvas id="map" width="256" height="256" aria-label="Bản đồ đánh dấu Mây và các đèn lồng"></canvas>
     <div class="map-key"><span><i></i> Mây</span><span><i></i> Đèn lồng</span></div>
   </aside>
 
   <div id="hint" class="hint" role="status" hidden></div>
+  <div id="inventory" class="inventory" hidden>
+    <span id="inventory-label"></span>
+    <div id="mote-bar" class="mote-bar" aria-hidden="true"></div>
+  </div>
+  <div id="cooldowns" class="cooldowns" hidden>
+    <button id="dash-cd" class="cooldown" tabindex="-1" aria-label="Hồi chiêu Lướt"></button>
+    <button id="pulse-cd" class="cooldown" tabindex="-1" aria-label="Hồi chiêu Tỏa Sáng"></button>
+  </div>
   <footer class="controls" aria-label="Phím điều khiển">
     <span><kbd>W A S D</kbd> Đi</span>
     <span><kbd>Q / R</kbd> Xoay góc nhìn</span>
     <span><kbd>Cách</kbd> Nhảy</span>
-    <span><kbd>E</kbd> Gửi đom đóm</span>
-    <span><kbd>F</kbd> Tỏa sáng</span>
+    <span><kbd>Shift</kbd> Lướt</span>
+    <span><kbd>E</kbd> Nạp ánh sáng</span>
+    <span><kbd>F</kbd> Tỏa Sáng</span>
+    <span><kbd>Esc / P</kbd> Tạm dừng</span>
   </footer>
 
+  <section class="end" id="night-intro" role="dialog" aria-modal="true" aria-labelledby="night-title" hidden>
+    <div class="end-card">
+      <p class="eyebrow" id="night-number"></p>
+      <h2 id="night-title"></h2>
+      <p class="speaker">Ông Đăng</p>
+      <p id="dialogue"></p>
+      <button class="action" id="enter-night">Vào đêm</button>
+    </div>
+  </section>
+  <section class="end" id="pause" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+    <div class="end-card">
+      <h2 id="pause-title">Tạm dừng</h2>
+      <div class="menu-buttons">
+        <button class="action" id="resume">Tiếp tục</button>
+        <button class="secondary" id="retry">Chơi lại Đêm</button>
+        <button class="secondary" id="pause-settings">Cài đặt</button>
+        <button class="secondary" id="pause-home">Về menu</button>
+      </div>
+    </div>
+  </section>
+  <section class="end" id="settings" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="end-card">
+      <h2 id="settings-title">Cài đặt</h2>
+      <label class="setting">Âm lượng <output id="volume-value"></output>
+        <input id="volume" type="range" min="0" max="100" aria-label="Âm lượng">
+      </label>
+      <label class="setting">Độ nhạy chuột <output id="sensitivity-value"></output>
+        <input id="sensitivity" type="range" min="25" max="200" aria-label="Độ nhạy chuột">
+      </label>
+      <button class="action" id="close-settings">Quay lại</button>
+    </div>
+  </section>
   <section class="end" id="end" role="dialog" aria-modal="true" aria-labelledby="outcome" hidden>
     <div class="end-card">
-      <p class="eyebrow">ĐÊM 1 <span></span> ĐẢO BẾN</p>
+      <p class="eyebrow" id="result-night"></p>
       <h2 id="outcome"></h2>
       <p id="summary"></p>
       <p id="final-score" class="final-score"></p>
-      <button class="action" id="restart">Chơi lại</button>
+      <div class="actions">
+        <button class="action" id="result-action"></button>
+        <button class="secondary" id="result-home">Về menu</button>
+      </div>
     </div>
   </section>
   <script type="module" src="/src/client.mjs"></script>

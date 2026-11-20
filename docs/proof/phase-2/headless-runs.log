@@ -1,0 +1,14 @@
+node src/headless.mjs --seed 1201 --night 1 --ticks 18000 --inputs docs/proof/phase-2/default-win.inputs.json --out replay.jsonl
+{"type":"end","ticks":13562,"state":"won","score":1331}
+wall_s=1.315 exit=0
+node src/headless.mjs --seed 1201 --night 3 --ticks 21600 --out a.jsonl
+{"type":"end","ticks":21600,"state":"lost","score":0}
+wall_s=4.332 exit=0
+node src/headless.mjs --seed 1201 --night 3 --ticks 21600 --out b.jsonl
+{"type":"end","ticks":21600,"state":"lost","score":0}
+wall_s=8.505 exit=0
+SHA256 a.jsonl CF5C7D0E8AC6DC77F280A1BA643AE9145E024E3FD64F281AA916AE72A5222020
+SHA256 b.jsonl CF5C7D0E8AC6DC77F280A1BA643AE9145E024E3FD64F281AA916AE72A5222020
+fc.exe /b a.jsonl b.jsonl
+Comparing files a.jsonl and B.JSONL
+FC: no differences encountered
